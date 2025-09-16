@@ -1,41 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
-  const [reports, setReports] = useState([
-    { id: 1, title: "Road Accident - Nairobi", status: "Pending" },
-    { id: 2, title: "Fire Outbreak - Mombasa", status: "Resolved" },
-  ]);
+  const [message, setMessage] = useState("Loading...");
+
+  useEffect(() => {
+    // Fetch from your Render backend
+    fetch("https://sdf-pt10-group-09.onrender.com/")
+      .then((res) => res.json())
+      .then((data) => {
+        setMessage(data.message);
+      })
+      .catch((err) => {
+        console.error("Error fetching API:", err);
+        setMessage("⚠️ Could not connect to backend");
+      });
+  }, []);
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Ajali 🚨</h1>
-        <p>Citizen-driven Emergency Reporting System</p>
-      </header>
-
-      <main>
-        <section className="report-list">
-          <h2>Recent Reports</h2>
-          <ul>
-            {reports.map((report) => (
-              <li key={report.id} className="report-card">
-                <strong>{report.title}</strong>
-                <span className={`status ${report.status.toLowerCase()}`}>
-                  {report.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </main>
-
-      <footer className="app-footer">
-        <p>&copy; {new Date().getFullYear()} Ajali | Made with ❤️ in Kenya</p>
-      </footer>
+      <h1>Ajali</h1>
+      <p>{message}</p>
     </div>
   );
 }
 
 export default App;
-
