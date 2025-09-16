@@ -40,7 +40,7 @@ Ajali! is a citizen-driven emergency reporting system for Kenya that enables use
 ## 🌍 Project Links
 
 - **Frontend (Development):** #[http://127.0.0.1:5173/](http://127.0.0.1:5173/)
-- **Fronted vercel link:** sdf-pt-10-group-09-81kn-hdiy3ly3g-victor-meyos-projects.vercel.app
+- **Fronted vercel link:**  <u>sdf-pt-10-group-09-81kn-hdiy3ly3g-victor-meyos-projects.vercel.app</u>
 - **Backend (Production):** [https://sdf-pt10-group-09.onrender.com/](https://sdf-pt10-group-09.onrender.com/)  
 - **GitHub Repository:** [https://github.com/VMeyo/SDF-PT10-Group-09](https://github.com/VMeyo/SDF-PT10-Group-09)
 
