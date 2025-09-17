@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+
+# Instance folder
+instance/
+
+# Migrations (optional)
+migrations/
+
+# Environment variables
+.env
+
+# Seed file (optional)
+seed.py
