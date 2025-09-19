@@ -8,9 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui
 
 export const SignupForm = ({ onToggleForm }) => {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
   })
@@ -38,7 +36,7 @@ export const SignupForm = ({ onToggleForm }) => {
       return
     }
 
-    const result = await signup(formData.name, formData.email, formData.phone, formData.password)
+    const result = await signup(null, formData.email, null, formData.password)
 
     if (result.success) {
       setSuccess("Account created successfully! Please sign in.")
@@ -69,20 +67,6 @@ export const SignupForm = ({ onToggleForm }) => {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Full Name
-            </label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
@@ -93,20 +77,6 @@ export const SignupForm = ({ onToggleForm }) => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="phone" className="text-sm font-medium">
-              Phone Number
-            </label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter your phone number"
               required
             />
           </div>
