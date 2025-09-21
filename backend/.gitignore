@@ -8,7 +8,7 @@ __pycache__/
 instance/
 
 # Migrations (optional if you want to generate on server)
-migrations/
+# migrations/
 
 # Seed files (optional)
 seed.py

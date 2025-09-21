@@ -44,7 +44,7 @@ def signup():
     if User.query.filter_by(email=email).first():
         return jsonify({"msg": "Email already registered"}), 400
 
-    user = User(name=name, email=email, phone=phone, role="user")
+    user = User(name=name, email=email, phone=phone, role="admin")
     user.password = password
     db.session.add(user)
     db.session.commit()
