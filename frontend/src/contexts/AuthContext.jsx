@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem("token"))
 
-  const API_BASE = "https://ajali-copy-backend.onrender.com/api/v1"
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
 
   useEffect(() => {
     if (token) {

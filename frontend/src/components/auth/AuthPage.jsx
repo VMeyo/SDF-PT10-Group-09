@@ -16,6 +16,7 @@ export const AuthPage = () => {
   const [success, setSuccess] = useState("")
 
   const { login, signup } = useAuth()
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
 
   const handleInputChange = (e) => {
     setFormData({
@@ -93,7 +94,7 @@ export const AuthPage = () => {
     setError("")
 
     try {
-      const response = await fetch("https://ajali-copy-backend.onrender.com/api/v1/auth/forgot-password", {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

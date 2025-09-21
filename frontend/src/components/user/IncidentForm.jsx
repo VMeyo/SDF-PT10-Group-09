@@ -17,7 +17,7 @@ export const IncidentForm = ({ onIncidentCreated }) => {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const API_BASE = "https://ajali-copy-backend.onrender.com/api/v1"
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
   const categories = [
