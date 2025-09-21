@@ -36,33 +36,16 @@
 #     return app
 # app/__init__.py
 from flask import Flask
-from .config import Config    # ✅ Add this import
+from flask_cors import CORS   # <-- make sure this is imported
+from .config import Config
 from .extensions import db, migrate, jwt, mail
-
-# Import Blueprints
-from .routes.auth import auth_bp
-from .routes.incidents import incidents_bp
-from .routes.media import media_bp
-from .routes.comments import comments_bp
-from .routes.admin import admin_bp
-from .routes.users import users_bp
-from .routes.migrate import migrate_bp
-from flask_cors import CORS
-
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Enable CORS
-    CORS(app, resources={
-        r"/api/*": {"origins": [
-            "http://127.0.0.1:5173",
-            "http://localhost:5173",
-            "https://ajali-copy-frontend.netlify.app",
-            "https://aistudio.google.com"
-        ]}
-    })
+    # ✅ Enable CORS for all routes (temporary for testing)
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Init extensions
     db.init_app(app)
@@ -71,6 +54,14 @@ def create_app(config_class=Config):
     mail.init_app(app)
 
     # Register blueprints
+    from .routes.auth import auth_bp
+    from .routes.incidents import incidents_bp
+    from .routes.media import media_bp
+    from .routes.comments import comments_bp
+    from .routes.admin import admin_bp
+    from .routes.users import users_bp
+    from .routes.migrate import migrate_bp
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(incidents_bp)
     app.register_blueprint(media_bp)
