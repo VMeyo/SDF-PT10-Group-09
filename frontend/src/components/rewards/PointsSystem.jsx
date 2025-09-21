@@ -12,7 +12,7 @@ export const PointsSystem = () => {
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = "https://ajali-copy-backend.onrender.com/api/v1"
+const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
   useEffect(() => {

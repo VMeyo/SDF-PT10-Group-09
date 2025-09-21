@@ -9,7 +9,7 @@ export const RewardsStore = ({ userPoints, onPointsUpdate }) => {
   const [redeemSuccess, setRedeemSuccess] = useState("")
   const [redeemError, setRedeemError] = useState("")
 
-  const API_BASE = "https://ajali-copy-backend.onrender.com/api/v1"
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
   const rewards = [

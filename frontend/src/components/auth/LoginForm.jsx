@@ -17,6 +17,8 @@ export const LoginForm = ({ onToggleForm }) => {
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("")
   const { login } = useAuth()
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -38,7 +40,7 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch("https://ajali-copy-backend.onrender.com/api/v1/auth/forgot-password", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
