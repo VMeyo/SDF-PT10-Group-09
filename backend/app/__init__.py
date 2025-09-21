@@ -35,11 +35,10 @@
 
 #     return app
 
-# app/__init__.py
 from flask import Flask
 from .config import Config
 from .extensions import db, migrate, jwt, mail
-from flask_cors import CORS  # <-- add this
+from flask_cors import CORS
 
 # Import Blueprints
 from .routes.auth import auth_bp
@@ -55,8 +54,15 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Enable CORS for local frontend (Vite dev server)
-    CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5173"}})
+    # Allow local dev + Netlify + AI Studio
+    allowed_origins = [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "https://your-site.netlify.app",
+        "https://aistudio.google.com"
+    ]
+
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
 
     # Initialize extensions
     db.init_app(app)
