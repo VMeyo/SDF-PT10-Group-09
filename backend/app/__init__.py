@@ -1,26 +1,73 @@
+# # app/__init__.py
+# from flask import Flask
+# from .config import Config
+# from .extensions import db, migrate, jwt, mail
+
+# # Import Blueprints
+# from .routes.auth import auth_bp
+# from .routes.incidents import incidents_bp
+# from .routes.media import media_bp
+# from .routes.comments import comments_bp
+# from .routes.admin import admin_bp
+# from .routes.users import users_bp
+# from .routes.migrate import migrate_bp
+
+
+# def create_app(config_class=Config):
+#     app = Flask(__name__)
+#     app.config.from_object(config_class)
+
+#     # Initialize extensions
+#     db.init_app(app)
+#     migrate.init_app(app, db)
+#     jwt.init_app(app)
+#     mail.init_app(app)
+
+#     # Register blueprints
+#     app.register_blueprint(auth_bp)
+#     app.register_blueprint(incidents_bp)
+#     app.register_blueprint(media_bp)
+#     app.register_blueprint(comments_bp)
+#     app.register_blueprint(admin_bp)
+#     app.register_blueprint(users_bp)
+#     app.register_blueprint(migrate_bp)
+
+
+#     return app
+# app/__init__.py
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
-from flask_cors import CORS
-import os
+from flask_cors import CORS   # <-- make sure this is imported
+from .config import Config
+from .extensions import db, migrate, jwt, mail
 
-db = SQLAlchemy()
-jwt = JWTManager()
-
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-    CORS(app)
-    app.config.from_object("app.config.Config")
-    
-    db.init_app(app)
-    jwt.init_app(app)
-    
-    from app.routes import api_bp
-    from app.auth import auth_bp
-    
-    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
-    # app.register_blueprint(api_bp, url_prefix='/api/v1')
-    app.register_blueprint(api_bp)  # no prefix
+    app.config.from_object(config_class)
 
-    
+    # ✅ Enable CORS for all routes (temporary for testing)
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
+    # Init extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
+    mail.init_app(app)
+
+    # Register blueprints
+    from .routes.auth import auth_bp
+    from .routes.incidents import incidents_bp
+    from .routes.media import media_bp
+    from .routes.comments import comments_bp
+    from .routes.admin import admin_bp
+    from .routes.users import users_bp
+    from .routes.migrate import migrate_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(incidents_bp)
+    app.register_blueprint(media_bp)
+    app.register_blueprint(comments_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(migrate_bp)
+
     return app
