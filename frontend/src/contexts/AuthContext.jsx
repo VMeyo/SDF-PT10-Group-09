@@ -15,13 +15,18 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(localStorage.getItem("token"))
+  const [token, setToken] = useState(null)
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sdf-pt10-group-09.onrender.com"
+  const API_BASE =
+    typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL
+      : "/api/v1"
 
-  // Debug log to check if env variable is loaded
-  console.log("[v1] API_BASE_URL:", import.meta.env.VITE_API_BASE_URL)
-  console.log("[v1] Using API_BASE:", API_BASE)
+  // Initialize token after component mounts to avoid SSR issues
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token")
+    setToken(storedToken)
+  }, [])
 
   useEffect(() => {
     if (token) {

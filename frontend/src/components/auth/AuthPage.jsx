@@ -16,7 +16,11 @@ export const AuthPage = () => {
   const [success, setSuccess] = useState("")
 
   const { login, signup } = useAuth()
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+
+  const API_BASE =
+    typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL
+      : "/api/v1"
 
   const handleInputChange = (e) => {
     setFormData({

@@ -14,32 +14,19 @@ export const GoogleMapView = () => {
   const [loading, setLoading] = useState(true)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
-  const token = localStorage.getItem("token")
 
   useEffect(() => {
     fetchActiveReports()
-    initializeMap()
+    initializeMapWithoutGoogleMaps()
   }, [])
 
-  const initializeMap = () => {
-    if (window.google && mapRef.current) {
-      const mapInstance = new window.google.maps.Map(mapRef.current, {
-        center: { lat: -1.2921, lng: 36.8219 }, // Nairobi coordinates
-        zoom: 12,
-        styles: [
-          {
-            featureType: "poi",
-            elementType: "labels",
-            stylers: [{ visibility: "off" }],
-          },
-        ],
-      })
-      setMap(mapInstance)
-    }
+  const initializeMapWithoutGoogleMaps = () => {
+    setLoading(false)
   }
 
   const fetchActiveReports = async () => {
     try {
+      const token = localStorage.getItem("token")
       const response = await fetch(`${API_BASE}/admin/incidents`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -57,60 +44,12 @@ export const GoogleMapView = () => {
           }))
 
         setActiveReports(reports)
-        addMarkersToMap(reports)
       }
     } catch (error) {
       console.error("Error fetching active reports:", error)
     } finally {
       setLoading(false)
     }
-  }
-
-  const addMarkersToMap = (reports) => {
-    if (!map) return
-
-    reports.forEach((report) => {
-      const marker = new window.google.maps.Marker({
-        position: { lat: report.lat, lng: report.lng },
-        map: map,
-        title: report.title,
-        icon: {
-          url: getSeverityMarkerIcon(report.severity),
-          scaledSize: new window.google.maps.Size(30, 30),
-        },
-      })
-
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: `
-          <div class="p-3">
-            <h3 class="font-semibold text-gray-900">${report.title}</h3>
-            <p class="text-sm text-gray-600 mt-1">${report.location}</p>
-            <div class="flex items-center justify-between mt-2">
-              <span class="px-2 py-1 text-xs rounded-full ${getSeverityBadgeClass(report.severity)}">
-                ${report.severity}
-              </span>
-              <span class="text-xs text-gray-500">${report.casualties} casualties</span>
-            </div>
-          </div>
-        `,
-      })
-
-      marker.addListener("click", () => {
-        infoWindow.open(map, marker)
-      })
-    })
-  }
-
-  const getSeverityMarkerIcon = (severity) => {
-    const colors = {
-      high: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/%3E%3C/svg%3E",
-      medium:
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23eab308'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/%3E%3C/svg%3E",
-      low: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2322c55e'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/%3E%3C/svg%3E",
-      critical:
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23dc2626'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/%3E%3C/svg%3E",
-    }
-    return colors[severity] || colors.medium
   }
 
   const getSeverityBadgeClass = (severity) => {
@@ -133,8 +72,6 @@ export const GoogleMapView = () => {
     return colors[severity] || "bg-gray-500"
   }
 
-  // ... existing code for other functions ...
-
   if (loading) {
     return (
       <div className="p-8">
@@ -151,17 +88,9 @@ export const GoogleMapView = () => {
 
   return (
     <div className="space-y-6">
-      <script
-        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-        async
-        defer
-        onLoad={initializeMap}
-      ></script>
-
       <div className="flex space-x-6">
         {/* Left Sidebar - Filters and Active Reports */}
         <div className="w-1/3 space-y-6">
-          {/* ... existing sidebar content ... */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-2 mb-4">
@@ -234,11 +163,20 @@ export const GoogleMapView = () => {
           </Card>
         </div>
 
-        {/* Right Side - Google Map */}
+        {/* Right Side - Map Placeholder */}
         <div className="flex-1">
           <Card className="h-full">
             <CardContent className="p-0 h-full">
-              <div ref={mapRef} className="w-full h-full min-h-[600px] rounded-lg" style={{ minHeight: "600px" }} />
+              <div className="w-full h-full min-h-[600px] rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <div className="text-6xl mb-4">🗺️</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Map View</h3>
+                  <p className="text-gray-500 mb-4">Interactive map showing incident locations</p>
+                  <div className="text-sm text-gray-400">
+                    Map integration requires secure server-side API key configuration
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
