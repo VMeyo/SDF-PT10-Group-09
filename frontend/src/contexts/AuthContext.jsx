@@ -17,7 +17,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem("token"))
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sdf-pt10-group-09.onrender.com"
+
+  // Debug log to check if env variable is loaded
+  console.log("[v1] API_BASE_URL:", import.meta.env.VITE_API_BASE_URL)
+  console.log("[v1] Using API_BASE:", API_BASE)
 
   useEffect(() => {
     if (token) {
