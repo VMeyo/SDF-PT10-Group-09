@@ -22,19 +22,9 @@ export const EmergencyDashboard = () => {
 
   const fetchEmergencyData = async () => {
     try {
-      const statsResponse = await fetch(`${API_BASE}/admin/emergency-stats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      console.log("[v0] Fetching emergency data from /incidents/")
 
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        setEmergencyStats(statsData)
-      }
-
-      const reportsResponse = await fetch(`${API_BASE}/incidents/recent`, {
+      const reportsResponse = await fetch(`${API_BASE}/incidents/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -43,10 +33,21 @@ export const EmergencyDashboard = () => {
 
       if (reportsResponse.ok) {
         const reportsData = await reportsResponse.json()
+        console.log("[v0] Fetched reports data:", reportsData)
         setRecentReports(reportsData)
+
+        const stats = {
+          activeReports: reportsData.filter((r) => r.status !== "resolved").length,
+          critical: reportsData.filter((r) => r.severity === "critical" || r.severity === "high").length,
+          responders: reportsData.reduce((sum, r) => sum + (r.responder_count || 0), 0),
+          resolved: reportsData.filter((r) => r.status === "resolved").length,
+        }
+        setEmergencyStats(stats)
+      } else {
+        console.error("[v0] Failed to fetch reports:", reportsResponse.status)
       }
     } catch (error) {
-      console.error("Error fetching emergency data:", error)
+      console.error("[v0] Error fetching emergency data:", error)
     } finally {
       setLoading(false)
     }
@@ -228,63 +229,71 @@ export const EmergencyDashboard = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-6">
-          {recentReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-0">
-                {/* Status indicators */}
-                <div className="p-4 pb-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-3 h-3 ${getSeverityColor(report.severity)} rounded-full`}></div>
-                      {report.verified && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full border border-green-200">
-                          ✓ Verified
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500">{formatTimeAgo(report.created_at)}</span>
-                  </div>
-                </div>
-
-                {/* Media placeholder */}
-                <div className="bg-gray-100 h-48 flex items-center justify-center mx-4 rounded-lg mb-4">
-                  <div className="text-center">
-                    <span className="text-4xl mb-2 block">⭐</span>
-                    <span className="text-sm text-gray-600">{report.media_count || 0} media files</span>
-                  </div>
-                </div>
-
-                {/* Report details */}
-                <div className="p-4 pt-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-xs px-2 py-1 rounded ${getSeverityColor(report.severity)} text-white font-medium`}
-                    >
-                      {getSeverityBadge(report.severity)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm">{getIncidentIcon(report.incident_type)}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-1">{report.incident_type}</h3>
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{report.title}</p>
-                      <p className="text-xs text-gray-500 mb-2">{report.description}</p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span>📍 {report.location}</span>
-                        <span>👥 {report.responder_count || 0} responders</span>
+          {recentReports.length > 0 ? (
+            recentReports.map((report) => (
+              <Card key={report.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-0">
+                  {/* Status indicators */}
+                  <div className="p-4 pb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 ${getSeverityColor(report.severity)} rounded-full`}></div>
+                        {report.verified && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full border border-green-200">
+                            ✓ Verified
+                          </span>
+                        )}
                       </div>
+                      <span className="text-xs text-gray-500">{formatTimeAgo(report.created_at)}</span>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <span className="text-lg">✓</span>
-                    </button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {/* Media placeholder */}
+                  <div className="bg-gray-100 h-48 flex items-center justify-center mx-4 rounded-lg mb-4">
+                    <div className="text-center">
+                      <span className="text-4xl mb-2 block">⭐</span>
+                      <span className="text-sm text-gray-600">{report.media_count || 0} media files</span>
+                    </div>
+                  </div>
+
+                  {/* Report details */}
+                  <div className="p-4 pt-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`text-xs px-2 py-1 rounded ${getSeverityColor(report.severity)} text-white font-medium`}
+                      >
+                        {getSeverityBadge(report.severity)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm">{getIncidentIcon(report.incident_type)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{report.incident_type}</h3>
+                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">{report.title}</p>
+                        <p className="text-xs text-gray-500 mb-2">{report.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>📍 {report.location}</span>
+                          <span>👥 {report.responder_count || 0} responders</span>
+                        </div>
+                      </div>
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <span className="text-lg">✓</span>
+                      </button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
+              <p className="text-gray-500">Reports will appear here once they are submitted.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

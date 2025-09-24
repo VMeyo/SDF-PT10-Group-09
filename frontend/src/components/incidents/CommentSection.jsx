@@ -11,7 +11,7 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
   const [error, setError] = useState("")
   const { user } = useAuth()
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
   const handleSubmitComment = async (e) => {
@@ -28,7 +28,7 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content: newComment }),
+        body: JSON.stringify({ text: newComment }), // Flask expects 'text' not 'content'
       })
 
       const data = await response.json()
@@ -37,7 +37,7 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
         onCommentAdded(data)
         setNewComment("")
       } else {
-        setError(data.message || "Failed to add comment")
+        setError(data.msg || "Failed to add comment") // Flask uses 'msg' not 'message'
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -97,8 +97,8 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
 
                   {comment.author_id === user?.id && <span className="text-xs text-muted-foreground">You</span>}
                 </div>
-
-                <p className="text-muted-foreground leading-relaxed">{comment.content}</p>
+                <p className="text-muted-foreground leading-relaxed">{comment.text}</p>{" "}
+                {/* Flask uses 'text' field for comment content */}
               </div>
             ))
           ) : (

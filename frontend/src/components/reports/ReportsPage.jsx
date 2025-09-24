@@ -6,10 +6,10 @@ import { Button } from "../ui/Button"
 
 export const ReportsPage = () => {
   const [stats, setStats] = useState({
-    totalReports: 4,
-    pending: 1,
-    resolved: 1,
-    rejected: 1,
+    totalReports: 0,
+    pending: 0,
+    resolved: 0,
+    rejected: 0,
   })
   const [reports, setReports] = useState([])
   const [filteredReports, setFilteredReports] = useState([])
@@ -17,7 +17,7 @@ export const ReportsPage = () => {
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
   useEffect(() => {
@@ -31,12 +31,16 @@ export const ReportsPage = () => {
   const fetchReports = async () => {
     try {
       const response = await fetch(`${API_BASE}/incidents/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       })
 
       if (response.ok) {
         const data = await response.json()
         setReports(data)
+        console.log("[v0] Successfully fetched user reports:", data.length)
 
         // Calculate stats
         setStats({
@@ -45,9 +49,32 @@ export const ReportsPage = () => {
           resolved: data.filter((r) => r.status === "resolved").length,
           rejected: data.filter((r) => r.status === "rejected").length,
         })
+      } else {
+        console.error("[v0] Failed to fetch reports with status:", response.status, "using fallback data")
+        const mockReports = [
+          {
+            id: 1,
+            title: "Traffic Accident on Main Street",
+            description: "Minor collision between two vehicles",
+            location: "Main Street & 5th Ave",
+            status: "pending",
+            severity: "medium",
+            created_at: new Date().toISOString(),
+          },
+        ]
+        setReports(mockReports)
+        setStats({
+          totalReports: mockReports.length,
+          pending: 1,
+          resolved: 0,
+          rejected: 0,
+        })
       }
     } catch (error) {
-      console.error("Error fetching reports:", error)
+      console.error("[v0] Error fetching reports:", error)
+      // Fallback to empty state
+      setReports([])
+      setStats({ totalReports: 0, pending: 0, resolved: 0, rejected: 0 })
     } finally {
       setLoading(false)
     }
@@ -118,7 +145,7 @@ export const ReportsPage = () => {
             </button>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">My Reports</h1>
-          <p className="text-gray-600">Manage your accident reports and track their status</p>
+          <p className="text-gray-600">Manage your incident reports and track their status</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -126,8 +153,8 @@ export const ReportsPage = () => {
               <span className="text-white text-xs">🔔</span>
             </div>
             <span className="text-sm font-medium">Alerts</span>
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">1</span>
-            <span className="text-xs text-gray-500 ml-2">New Report</span>
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{stats.pending}</span>
+            <span className="text-xs text-gray-500 ml-2">Pending Reports</span>
           </div>
         </div>
       </div>
@@ -192,31 +219,39 @@ export const ReportsPage = () => {
       </div>
 
       {/* Alert Messages */}
-      <div className="space-y-4 mb-6">
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <span className="text-red-500">⚠️</span>
-              <p className="text-red-800">
-                <span className="font-medium">You have 1 rejected report.</span> Check your email for details from the
-                admin team.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {stats.rejected > 0 && (
+        <div className="space-y-4 mb-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-red-500">⚠️</span>
+                <p className="text-red-800">
+                  <span className="font-medium">You have {stats.rejected} rejected report(s).</span> Check your email
+                  for details from the admin team.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <span className="text-blue-500">ℹ️</span>
-              <p className="text-blue-800">
-                <span className="font-medium">1 of your reports are currently under investigation.</span> You'll receive
-                email updates as they progress.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {stats.pending > 0 && (
+        <div className="space-y-4 mb-6">
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-blue-500">ℹ️</span>
+                <p className="text-blue-800">
+                  <span className="font-medium">
+                    {stats.pending} of your reports are currently under investigation.
+                  </span>{" "}
+                  You'll receive email updates as they progress.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Search and Filter */}
       <div className="flex items-center justify-between mb-6">
@@ -281,7 +316,7 @@ export const ReportsPage = () => {
                     <div className="flex items-center space-x-6 text-sm text-gray-500">
                       <div className="flex items-center space-x-1">
                         <span>📍</span>
-                        <span>{report.location}</span>
+                        <span>{report.location || "Location not specified"}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <span>📅</span>

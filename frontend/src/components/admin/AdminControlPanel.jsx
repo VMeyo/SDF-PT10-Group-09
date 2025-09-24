@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "../ui/Card"
+import { UserManagement } from "./UserManagement"
+import { ReportManagement } from "./ReportManagement"
+import { StatusManagement } from "./StatusManagement"
+import { RoleManagement } from "./RoleManagement"
 
 export const AdminControlPanel = () => {
   const [activeTab, setActiveTab] = useState("Overview")
@@ -17,7 +21,7 @@ export const AdminControlPanel = () => {
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
-  const tabs = ["Overview", "Reports", "Users", "Settings"]
+  const tabs = ["Overview", "Reports", "Users", "Status", "Roles", "Settings"]
 
   useEffect(() => {
     fetchAdminData()
@@ -192,79 +196,15 @@ export const AdminControlPanel = () => {
           ))}
         </div>
 
-        {activeTab === "Users" && (
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
-                  + Add Admin User
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">All Users</h4>
-              </div>
-
-              <div className="space-y-3">
-                {users.map((user, index) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div
-                        className={`w-10 h-10 ${getUserAvatarColor(index)} rounded-full flex items-center justify-center text-white font-medium text-sm`}
-                      >
-                        {getUserAvatar(user.name)}
-                      </div>
-                      <div>
-                        <h5 className="font-medium text-gray-900">{user.name}</h5>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>{user.email}</span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              user.role === "admin" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {user.role === "admin" ? "Emergency Admin" : "Citizen Reporter"}
-                          </span>
-                          <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">active</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{user.incident_count || 0} reports submitted</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <span>✉️</span>
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <span>📞</span>
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <span>✏️</span>
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600">
-                        <span>🗑️</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === "Users" && <UserManagement />}
+        {activeTab === "Reports" && <ReportManagement />}
+        {activeTab === "Status" && <StatusManagement />}
+        {activeTab === "Roles" && <RoleManagement />}
 
         {activeTab === "Overview" && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h3 className="text-lg font-semibold mb-4">System Overview</h3>
             <p className="text-gray-600">Dashboard overview with key metrics and recent activity.</p>
-          </div>
-        )}
-
-        {activeTab === "Reports" && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-4">Reports Management</h3>
-            <p className="text-gray-600">Manage and review all incident reports in the system.</p>
           </div>
         )}
 

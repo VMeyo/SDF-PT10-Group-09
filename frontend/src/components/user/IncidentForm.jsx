@@ -12,14 +12,18 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     location: "",
     category: "",
     severity: "medium",
+    latitude: null,
+    longitude: null,
   })
   const [mediaFiles, setMediaFiles] = useState([])
   const [uploadProgress, setUploadProgress] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState("")
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
   const categories = [
@@ -64,18 +68,18 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     setMediaFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const uploadMedia = async (files) => {
+  const uploadMedia = async (incidentId, files) => {
     const uploadedUrls = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const formData = new FormData()
-      formData.append("media", file)
+      formData.append("file", file) // Flask expects 'file' not 'media'
 
       try {
         setUploadProgress((prev) => ({ ...prev, [i]: 0 }))
 
-        const response = await fetch(`${API_BASE}/upload`, {
+        const response = await fetch(`${API_BASE}/incidents/${incidentId}/media`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,7 +89,7 @@ export const IncidentForm = ({ onIncidentCreated }) => {
 
         if (response.ok) {
           const data = await response.json()
-          uploadedUrls.push(data.url)
+          uploadedUrls.push(data.file_url) // Flask returns file_url
           setUploadProgress((prev) => ({ ...prev, [i]: 100 }))
         }
       } catch (error) {
@@ -96,6 +100,62 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     return uploadedUrls
   }
 
+  const getCurrentLocation = () => {
+    setLocationLoading(true)
+    setLocationError("")
+
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser")
+      setLocationLoading(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setFormData((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }))
+        setLocationLoading(false)
+
+        // Optionally reverse geocode to get address
+        reverseGeocode(latitude, longitude)
+      },
+      (error) => {
+        setLocationError("Unable to get your location. Please enter manually.")
+        setLocationLoading(false)
+        console.error("Geolocation error:", error)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000, // 5 minutes
+      },
+    )
+  }
+
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      // Using a simple reverse geocoding service (you might want to use Google Maps API)
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      )
+      const data = await response.json()
+
+      if (data.locality || data.city) {
+        const address = [data.locality || data.city, data.countryName].filter(Boolean).join(", ")
+        setFormData((prev) => ({
+          ...prev,
+          location: prev.location || address, // Only set if location is empty
+        }))
+      }
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -103,26 +163,31 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     setSuccess("")
 
     try {
-      let mediaUrls = []
-      if (mediaFiles.length > 0) {
-        mediaUrls = await uploadMedia(mediaFiles)
-      }
-
-      const response = await fetch(`${API_BASE}/incidents`, {
+      const response = await fetch(`${API_BASE}/incidents/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
-          mediaUrls,
+          title: formData.title,
+          description: formData.description,
+          location: formData.location,
+          latitude: formData.latitude || 0,
+          longitude: formData.longitude || 0,
+          category: formData.category,
+          severity: formData.severity,
         }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
+        let mediaUrls = []
+        if (mediaFiles.length > 0) {
+          mediaUrls = await uploadMedia(data.id, mediaFiles)
+        }
+
         setSuccess("Incident reported successfully!")
         setFormData({
           title: "",
@@ -130,12 +195,14 @@ export const IncidentForm = ({ onIncidentCreated }) => {
           location: "",
           category: "",
           severity: "medium",
+          latitude: null,
+          longitude: null,
         })
         setMediaFiles([])
         setUploadProgress({})
-        onIncidentCreated(data)
+        onIncidentCreated({ ...data, mediaUrls })
       } else {
-        setError(data.message || "Failed to report incident")
+        setError(data.msg || "Failed to report incident") // Flask uses 'msg' not 'message'
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -223,14 +290,36 @@ export const IncidentForm = ({ onIncidentCreated }) => {
             <label htmlFor="location" className="text-sm font-medium">
               Location *
             </label>
-            <Input
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Specific location or address"
-              required
-            />
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="Specific location or address"
+                  required
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={getCurrentLocation}
+                  disabled={locationLoading}
+                  className="shrink-0 bg-transparent"
+                >
+                  {locationLoading ? "📍..." : "📍 GPS"}
+                </Button>
+              </div>
+
+              {locationError && <p className="text-sm text-destructive">{locationError}</p>}
+
+              {formData.latitude && formData.longitude && (
+                <p className="text-sm text-muted-foreground">
+                  📍 Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

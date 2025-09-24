@@ -8,7 +8,7 @@ export const MediaUpload = ({ incidentId, onMediaUploaded }) => {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
   const handleFileUpload = async (e) => {
@@ -20,31 +20,51 @@ export const MediaUpload = ({ incidentId, onMediaUploaded }) => {
     setSuccess("")
 
     try {
-      const formData = new FormData()
-      Array.from(files).forEach((file) => {
-        formData.append("media", file)
-      })
+      let uploadedCount = 0
+      const errorMessages = []
 
-      const response = await fetch(`${API_BASE}/media/${incidentId}/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      })
+      for (const file of files) {
+        const formData = new FormData()
+        formData.append("file", file) // Flask expects 'file' not 'media'
 
-      const data = await response.json()
+        console.log("[v0] Uploading file:", file.name, "to incident:", incidentId)
+        const response = await fetch(`${API_BASE}/media/${incidentId}/upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
 
-      if (response.ok) {
-        setSuccess(`Successfully uploaded ${files.length} file(s)`)
+        const data = await response.json()
+        console.log("[v0] Upload response:", response.status, data)
+
+        if (response.ok) {
+          uploadedCount++
+        } else {
+          const errorMsg = data.msg || data.message || `Upload failed for ${file.name}`
+          errorMessages.push(errorMsg)
+          console.error("[v0] Upload failed for file:", file.name, errorMsg)
+        }
+      }
+
+      if (uploadedCount > 0) {
+        setSuccess(`Successfully uploaded ${uploadedCount} file(s)`)
         onMediaUploaded()
         // Clear the input
         e.target.value = ""
-      } else {
-        setError(data.message || "Failed to upload media")
+      }
+
+      if (errorMessages.length > 0) {
+        setError(`Upload issues: ${errorMessages.join(", ")}`)
+      }
+
+      if (uploadedCount === 0) {
+        setError("Failed to upload any files. Please check your authentication and try again.")
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      console.error("[v0] Network error during upload:", error)
+      setError("Network error. Please check your connection and try again.")
     } finally {
       setUploading(false)
     }
