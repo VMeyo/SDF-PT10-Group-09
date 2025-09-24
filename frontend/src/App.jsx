@@ -1,28 +1,33 @@
-import { useEffect, useState } from "react";
-import "./App.css";
+"use client"
 
-function App() {
-  const [message, setMessage] = useState("Loading...");
+import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import { AuthPage } from "./components/auth/AuthPage"
+import { Dashboard } from "./components/Dashboard"
+import "./index.css"
 
-  useEffect(() => {
-    // Fetch from your Render backend
-    fetch("https://sdf-pt10-group-09.onrender.com/")
-      .then((res) => res.json())
-      .then((data) => {
-        setMessage(data.message);
-      })
-      .catch((err) => {
-        console.error("Error fetching API:", err);
-        setMessage("⚠️ Could not connect to backend");
-      });
-  }, []);
+function AppContent() {
+  const { user, loading } = useAuth()
 
-  return (
-    <div className="app">
-      <h1>Ajali</h1>
-      <p>{message}</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return user ? <Dashboard /> : <AuthPage />
 }
 
-export default App;
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
+}
+
+export default App
