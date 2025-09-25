@@ -3,11 +3,9 @@
 import { useState } from "react"
 import { Card, CardContent } from "../ui/Card"
 import { Button } from "../ui/Button"
-import { IncidentDetail } from "../incidents/IncidentDetail"
 import { IncidentFilters } from "../incidents/IncidentFilters"
 
-export const IncidentList = ({ incidents }) => {
-  const [selectedIncident, setSelectedIncident] = useState(null)
+export const IncidentList = ({ incidents, onViewDetail }) => {
   const [filters, setFilters] = useState({})
   const [filteredIncidents, setFilteredIncidents] = useState(incidents)
 
@@ -129,7 +127,7 @@ export const IncidentList = ({ incidents }) => {
 
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground">ID: #{incident.id}</span>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedIncident(incident.id)}>
+                  <Button variant="outline" size="sm" onClick={() => onViewDetail?.(incident.id)}>
                     View Details
                   </Button>
                 </div>
@@ -138,8 +136,6 @@ export const IncidentList = ({ incidents }) => {
           </Card>
         ))}
       </div>
-
-      {selectedIncident && <IncidentDetail incidentId={selectedIncident} onClose={() => setSelectedIncident(null)} />}
     </div>
   )
 }

@@ -1,4 +1,6 @@
-export const API_BASE = import.meta.env.VITE_API_BASE_URL
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
+
+console.log("[v0] API_BASE configured as:", API_BASE)
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem("token")
@@ -10,6 +12,8 @@ export const getAuthHeaders = () => {
 
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE}${endpoint}`
+  console.log("[v0] Making API request to:", url)
+
   const config = {
     headers: getAuthHeaders(),
     ...options,
@@ -19,5 +23,12 @@ export const apiRequest = async (endpoint, options = {}) => {
     },
   }
 
-  return fetch(url, config)
+  try {
+    const response = await fetch(url, config)
+    console.log("[v0] API response status:", response.status)
+    return response
+  } catch (error) {
+    console.error("[v0] API request failed:", error)
+    throw error
+  }
 }

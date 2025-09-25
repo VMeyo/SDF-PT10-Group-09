@@ -7,7 +7,9 @@ export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [formData, setFormData] = useState({
+    name: "", // Added name field for signup
     email: "",
+    phone: "", // Added phone field to match backend requirements
     password: "",
     confirmPassword: "",
   })
@@ -16,7 +18,11 @@ export const AuthPage = () => {
   const [success, setSuccess] = useState("")
 
   const { login, signup } = useAuth()
-  const API_BASE = import.meta.env.VITE_API_BASE_URL
+
+  const API_BASE =
+    typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
+      ? import.meta.env.VITE_API_BASE_URL
+      : "/api/v1"
 
   const handleInputChange = (e) => {
     setFormData({
@@ -32,6 +38,12 @@ export const AuthPage = () => {
     setSuccess("")
 
     if (!isLogin) {
+      if (!formData.name.trim()) {
+        setError("Name is required")
+        setLoading(false)
+        return
+      }
+
       if (formData.password.length < 6) {
         setError("Password must be at least 6 characters long")
         setLoading(false)
@@ -57,14 +69,16 @@ export const AuthPage = () => {
       if (isLogin) {
         result = await login(formData.email, formData.password)
       } else {
-        result = await signup(null, formData.email, null, formData.password)
+        result = await signup(formData.name, formData.email, formData.phone, formData.password)
       }
 
       if (result.success) {
         if (!isLogin) {
           setSuccess("Account created successfully! You can now sign in.")
           setFormData({
+            name: "", // Reset name field
             email: "",
+            phone: "", // Reset phone field
             password: "",
             confirmPassword: "",
           })
@@ -329,6 +343,36 @@ export const AuthPage = () => {
           )}
 
           <form onSubmit={handleSubmit}>
+            {!isLogin && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-input"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    className="form-input"
+                    placeholder="Enter your phone number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             <div className="form-group">
               <label className="form-label">Email Address</label>
               <input
@@ -400,7 +444,9 @@ export const AuthPage = () => {
                 setError("")
                 setSuccess("")
                 setFormData({
+                  name: "", // Reset name field when switching modes
                   email: "",
+                  phone: "", // Reset phone field when switching modes
                   password: "",
                   confirmPassword: "",
                 })

@@ -14,7 +14,7 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
 
-  const API_BASE = "https://ajali-copy-backend.onrender.com/api/v1"
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
   useEffect(() => {
@@ -27,16 +27,24 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
 
   const fetchIncidents = async () => {
     try {
-      const response = await fetch(`${API_BASE}/admin/incidents`, {
+      console.log("[v0] Admin fetching incidents from:", `${API_BASE}/incidents/`)
+      const response = await fetch(`${API_BASE}/incidents/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Admin received incidents:", data.length, "incidents")
+        console.log(
+          "[v0] Sample incident statuses:",
+          data.slice(0, 3).map((i) => ({ id: i.id, status: i.status, title: i.title })),
+        )
         setIncidents(data)
+      } else {
+        console.log("[v0] Admin fetch failed with status:", response.status)
       }
     } catch (error) {
-      console.error("Error fetching incidents:", error)
+      console.error("[v0] Admin error fetching incidents:", error)
     } finally {
       setLoading(false)
     }
@@ -73,8 +81,8 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
     setUpdating(incidentId)
 
     try {
-      const response = await fetch(`${API_BASE}/admin/incidents/${incidentId}/status`, {
-        method: "PATCH",
+      const response = await fetch(`${API_BASE}/incidents/${incidentId}`, {
+        method: "PUT", // Flask uses PUT for updates
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

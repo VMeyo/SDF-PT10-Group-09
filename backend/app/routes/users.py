@@ -1,4 +1,3 @@
-# app/routes/users.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
@@ -6,9 +5,11 @@ from app.models import User
 
 users_bp = Blueprint("users_bp", __name__, url_prefix="/api/v1/users")
 
+POINTS_TO_AIRTIME_RATE = 5  # 1 point = 5 KES
+
+
 # ---------------------
 # Get current user's points
-# GET /api/v1/users/points
 # ---------------------
 @users_bp.route("/points", methods=["GET"])
 @jwt_required()
@@ -17,10 +18,9 @@ def get_points():
     user = User.query.get_or_404(user_id)
     return jsonify({"points": user.points})
 
+
 # ---------------------
 # Redeem points for rewards
-# POST /api/v1/users/redeem
-# Body: { "points": int, "reward": "string" }
 # ---------------------
 @users_bp.route("/redeem", methods=["POST"])
 @jwt_required()
@@ -40,12 +40,20 @@ def redeem_points():
     user.points -= redeem_points
     db.session.commit()
 
-    # You can log reward redemption to a separate table if needed
-    return jsonify({"msg": f"Redeemed {redeem_points} points for {reward_name}", "points_remaining": user.points})
+    # Auto-calculate airtime if reward is "airtime"
+    airtime_amount = None
+    if reward_name.lower() == "airtime":
+        airtime_amount = redeem_points * POINTS_TO_AIRTIME_RATE
+
+    msg = f"Redeemed {redeem_points} points for {reward_name}"
+    if airtime_amount:
+        msg += f" ({airtime_amount} KES airtime)"
+
+    return jsonify({"msg": msg, "points_remaining": user.points})
+
 
 # ---------------------
 # Leaderboard: Top reporters by points
-# GET /api/v1/users/leaderboard
 # ---------------------
 @users_bp.route("/leaderboard", methods=["GET"])
 def leaderboard():
@@ -59,3 +67,27 @@ def leaderboard():
         } for u in users
     ]
     return jsonify(result)
+
+
+# ---------------------
+# List all users (Admin only)
+# ---------------------
+@users_bp.route("/", methods=["GET"])
+@jwt_required()
+def list_users():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+
+    if current_user.role != "admin":
+        return jsonify({"msg": "Admins only"}), 403
+
+    users = User.query.all()
+    return jsonify([
+        {
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+            "role": u.role,
+            "points": u.points
+        } for u in users
+    ])
