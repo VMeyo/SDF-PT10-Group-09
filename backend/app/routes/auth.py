@@ -65,7 +65,6 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"msg": "Invalid credentials"}), 401
 
-    # 🔑 Cast user.id to str
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
@@ -88,7 +87,7 @@ def login():
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def me():
-    user_id = int(get_jwt_identity())  # 🔑 Cast back to int
+    user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     if not user:
         return jsonify({"msg": "User not found"}), 404
@@ -108,7 +107,7 @@ def me():
 @auth_bp.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    user_id = int(get_jwt_identity())  # 🔑 Cast back to int
+    user_id = int(get_jwt_identity())
     access_token = create_access_token(identity=str(user_id))
     return jsonify({"access_token": access_token})
 
@@ -116,8 +115,8 @@ def refresh():
 # ---------------------
 # Password reset request
 # ---------------------
-@auth_bp.route("/password-reset-request", methods=["POST"])
-def password_reset_request():
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
     data = request.get_json()
     email = data.get("email")
     user = User.query.filter_by(email=email).first()
@@ -130,7 +129,8 @@ def password_reset_request():
     msg = Message(
         subject="Password Reset Request",
         recipients=[email],
-        body=f"Hi {user.name},\n\nClick the link to reset your password: {reset_url}\n\nIf you did not request this, ignore this email."
+        body=f"Hi {user.name},\n\nClick the link to reset your password: {reset_url}\n\nIf you did not request this, ignore this email.",
+        sender=current_app.config["MAIL_DEFAULT_SENDER"]  # ✅ ensure sender is set
     )
     mail.send(msg)
     return jsonify({"msg": "Password reset email sent"}), 200
@@ -139,7 +139,7 @@ def password_reset_request():
 # ---------------------
 # Password reset
 # ---------------------
-@auth_bp.route("/password-reset/<token>", methods=["POST"])
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
 def password_reset(token):
     data = request.get_json()
     new_password = data.get("password")
@@ -154,13 +154,13 @@ def password_reset(token):
 
     user.password = new_password
     db.session.commit()
-    return jsonify({"msg": "Password updated successfully"})
+    return jsonify({"msg": "Password updated successfully"}), 200
 
 
 # ---------------------
 # Promote user (Admin only)
 # ---------------------
-@auth_bp.route("/promote/<int:user_id>", methods=["PUT"])
+@auth_bp.route("/users/<int:user_id>/promote", methods=["PUT"])
 @jwt_required()
 def promote_user(user_id):
     current_user_id = int(get_jwt_identity())

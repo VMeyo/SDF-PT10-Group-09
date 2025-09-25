@@ -1,4 +1,3 @@
-# app/routes/incidents.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
@@ -6,6 +5,7 @@ from app.models import Incident, Comment, Media, User
 
 incidents_bp = Blueprint("incidents", __name__, url_prefix="/api/v1/incidents")
 
+ALLOWED_STATUSES = ["pending", "in-progress", "resolved", "rejected"]
 
 # ------------------------
 # Create a new incident
@@ -112,7 +112,16 @@ def update_incident(incident_id):
     if "longitude" in data:
         incident.longitude = data["longitude"]
     if "status" in data:
-        incident.status = data["status"]
+        new_status = data["status"]
+        if new_status not in ALLOWED_STATUSES:
+            return jsonify({"msg": f"Invalid status. Allowed: {ALLOWED_STATUSES}"}), 400
+
+        # Award points if status moves to resolved
+        if new_status == "resolved" and incident.status != "resolved":
+            incident_user = User.query.get(incident.created_by)
+            incident_user.points += 5
+
+        incident.status = new_status
 
     db.session.commit()
     return jsonify({"msg": "Incident updated"})
