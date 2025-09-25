@@ -7,3 +7,4 @@ python-dotenv
 psycopg2-binary
 gunicorn
 Flask-Mail
+psycopg2-binary>=2.9
