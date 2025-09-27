@@ -23,7 +23,7 @@ export const ReportManagement = () => {
     total: 0,
     pending: 0,
     inProgress: 0,
-    resolved: 0,
+    approved: 0,
     rejected: 0,
   })
 
@@ -41,8 +41,8 @@ export const ReportManagement = () => {
 
   const fetchReports = async () => {
     try {
-      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents/`)
-      const response = await fetch(`${API_BASE}/incidents/`, {
+      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
+      const response = await fetch(`${API_BASE}/incidents`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -145,7 +145,7 @@ export const ReportManagement = () => {
       total: reports.length,
       pending: reports.filter((r) => r.status === "pending").length,
       inProgress: reports.filter((r) => r.status === "in_progress").length,
-      resolved: reports.filter((r) => r.status === "resolved").length,
+      approved: reports.filter((r) => r.status === "approved").length,
       rejected: reports.filter((r) => r.status === "rejected").length,
     })
   }
@@ -169,9 +169,18 @@ export const ReportManagement = () => {
         )
         setReports(updatedReports)
 
-        // Update selected report if it's currently being viewed
-        if (selectedReportId && selectedReportId === reportId) {
-          // Assuming IncidentDetailPage will handle the update internally
+        if (newStatus === "approved") {
+          try {
+            await fetch(`${API_BASE}/incidents/${reportId}/award-points`, {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
+            console.log("[v0] Points awarded for approved incident")
+          } catch (error) {
+            console.error("[v0] Error awarding points:", error)
+          }
         }
 
         console.log("[v0] Report status updated successfully")
@@ -184,51 +193,6 @@ export const ReportManagement = () => {
       alert("Error updating report status. Please check your connection.")
     } finally {
       setUpdating(null)
-    }
-  }
-
-  const assignReportToUser = async (reportId, userId) => {
-    try {
-      console.log("[v0] Assigning report:", reportId, "to user:", userId)
-      const response = await fetch(`${API_BASE}/incidents/${reportId}/assign`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ assignedTo: userId }),
-      })
-
-      if (response.ok) {
-        setReports(reports.map((report) => (report.id === reportId ? { ...report, assignedTo: userId } : report)))
-        console.log("[v0] Report assigned successfully")
-      }
-    } catch (error) {
-      console.error("[v0] Error assigning report:", error)
-    }
-  }
-
-  const bulkUpdateReports = async (action) => {
-    if (selectedReports.length === 0) return
-
-    try {
-      console.log("[v0] Bulk updating reports:", selectedReports, "action:", action)
-      const response = await fetch(`${API_BASE}/incidents/bulk`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ reportIds: selectedReports, action }),
-      })
-
-      if (response.ok) {
-        fetchReports()
-        setSelectedReports([])
-        console.log("[v0] Bulk update completed successfully")
-      }
-    } catch (error) {
-      console.error("[v0] Error performing bulk action:", error)
     }
   }
 
@@ -269,7 +233,7 @@ export const ReportManagement = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "resolved":
+      case "approved":
         return "bg-green-100 text-green-800 border-green-200"
       case "in_progress":
         return "bg-blue-100 text-blue-800 border-blue-200"
@@ -332,19 +296,7 @@ export const ReportManagement = () => {
           <p className="text-muted-foreground">Manage and review all incident reports</p>
         </div>
         <div className="flex space-x-2">
-          {selectedReports.length > 0 && (
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateReports("approve")}>
-                Approve Selected
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateReports("reject")}>
-                Reject Selected
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateReports("resolve")}>
-                Resolve Selected
-              </Button>
-            </div>
-          )}
+          {/* Removed bulk update buttons as they are not in the API spec */}
           <Button onClick={() => handleViewDetails(null)}>+ Create Report</Button>
         </div>
       </div>
@@ -371,8 +323,8 @@ export const ReportManagement = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
-            <div className="text-sm text-gray-600">Resolved</div>
+            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+            <div className="text-sm text-gray-600">Approved</div>
           </CardContent>
         </Card>
         <Card>
@@ -405,7 +357,7 @@ export const ReportManagement = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
+              <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
             <select
@@ -529,7 +481,7 @@ export const ReportManagement = () => {
                     >
                       <option value="pending">Pending</option>
                       <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
+                      <option value="approved">Approved</option>
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
@@ -539,7 +491,7 @@ export const ReportManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => updateReportStatus(report.id, "in_progress")}
-                      disabled={updating === report.id || report.status === "resolved"}
+                      disabled={updating === report.id || report.status === "approved"}
                       className="text-blue-600 hover:bg-blue-50"
                     >
                       {updating === report.id ? "Updating..." : "Start Review"}
@@ -548,11 +500,11 @@ export const ReportManagement = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateReportStatus(report.id, "resolved")}
-                      disabled={updating === report.id || report.status === "resolved"}
+                      onClick={() => updateReportStatus(report.id, "approved")}
+                      disabled={updating === report.id || report.status === "approved"}
                       className="text-green-600 hover:bg-green-50"
                     >
-                      Resolve
+                      Approve
                     </Button>
 
                     <Button
