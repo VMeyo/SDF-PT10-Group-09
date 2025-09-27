@@ -399,59 +399,74 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
           <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={onBack} size="sm">
-              ← Back to Reports
+            <Button
+              variant="outline"
+              onClick={onBack}
+              size="sm"
+              className="flex items-center space-x-2 hover:bg-gray-50 border-gray-300 bg-transparent"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Back to Reports</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Alerts</div>
-            <div className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">6</div>
+          <div className="flex items-center space-x-3">
+            <div className="bg-red-100 text-red-800 px-3 py-2 rounded-xl text-sm font-medium border border-red-200">
+              🔔 Alerts
+            </div>
+            <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm">
+              6
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-gray-800 to-gray-600 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative px-6 py-12">
+      <div className="relative bg-gradient-to-r from-gray-800 via-gray-700 to-gray-600 text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 to-purple-900/20"></div>
+        <div className="relative px-4 lg:px-6 py-8 lg:py-12">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-6 lg:space-y-0 mb-6">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="bg-orange-100 text-orange-800 px-3 py-2 rounded-xl text-sm font-medium border border-orange-200">
                   {incident.category || "Uncategorized"}
                 </span>
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(incident.status)}`}>
+                <span className={`px-3 py-2 text-sm font-medium rounded-xl border ${getStatusColor(incident.status)}`}>
                   {incident.status ? incident.status.replace("_", " ").toUpperCase() : "UNKNOWN"}
                 </span>
                 {incident.verified && (
-                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-                    ✓ Verified
+                  <span className="bg-green-100 text-green-800 px-3 py-2 rounded-xl text-sm font-medium flex items-center border border-green-200">
+                    <span className="mr-1">✓</span>
+                    Verified
                   </span>
                 )}
               </div>
-              <div className="text-center">
-                <div className="text-6xl mb-2">⚠️</div>
-                <div className="text-sm opacity-75">
+              <div className="text-center lg:text-right">
+                <div className="text-5xl lg:text-6xl mb-3">⚠️</div>
+                <div className="text-sm opacity-90 font-medium">
                   {incident.media && incident.media.length > 0
                     ? `${incident.media.length} Media Files`
                     : "No Media Available"}
                 </div>
-                <div className="text-xs opacity-60">
+                <div className="text-xs opacity-70 mt-1">
                   {incident.media && incident.media.length === 0 ? "no photos or videos reported" : ""}
                 </div>
               </div>
             </div>
 
-            <h1 className="text-4xl font-bold mb-4">{incident.title}</h1>
+            <h1
+              className="text-3xl lg:text-4xl font-bold mb-6 leading-tight"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {incident.title}
+            </h1>
 
-            <div className="flex items-center space-x-6 text-sm opacity-90">
-              <div className="flex items-center space-x-1">
-                <span>📅</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-3 sm:space-y-0 text-sm opacity-90">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">📅</span>
                 <span>
                   {new Date(incident.created_at).toLocaleDateString("en-US", {
                     weekday: "long",
@@ -466,87 +481,106 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   })}
                 </span>
               </div>
-              <div className="flex items-center space-x-1">
-                <span>📍</span>
-                <span>{incident.location || "Location not specified"}</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">📍</span>
+                <span className="truncate">{incident.location || "Location not specified"}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Incident Report */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Incident Report</CardTitle>
+            <Card className="shadow-sm border-gray-200 rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                  Incident Report
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Description */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-700 leading-relaxed">{incident.description}</p>
+                  <h3 className="font-semibold text-gray-900 mb-3 text-lg">Description</h3>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-gray-700 leading-relaxed">{incident.description}</p>
+                  </div>
                 </div>
 
                 {/* Location */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                    <span className="mr-2">📍</span>
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
+                    <span className="mr-2 text-xl">📍</span>
                     Location
                   </h3>
-
                   <IncidentMap incident={incident} />
                 </div>
               </CardContent>
             </Card>
 
             {/* Media Upload */}
-            <MediaUpload incidentId={incident.id} onMediaUploaded={fetchIncidentDetails} />
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <MediaUpload incidentId={incident.id} onMediaUploaded={fetchIncidentDetails} />
+            </div>
 
             {/* Comments Section */}
-            <CommentSection incidentId={incident.id} comments={comments} onCommentAdded={handleCommentAdded} />
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <CommentSection incidentId={incident.id} comments={comments} onCommentAdded={handleCommentAdded} />
+            </div>
           </div>
 
           {/* Right Column - Emergency Response & Details */}
           <div className="space-y-6">
-            {/* Emergency Response */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Emergency Response</CardTitle>
+            <Card className="shadow-sm border-red-200 rounded-xl bg-gradient-to-br from-red-50 to-red-100">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-red-700 flex items-center text-lg">
+                  <span className="mr-2">🚨</span>
+                  Emergency Response
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full bg-red-600 hover:bg-red-700 text-white">📞 Call Emergency Services</Button>
-                <Button variant="outline" className="w-full bg-transparent">
-                  📋 Report Update
+              <CardContent className="space-y-3">
+                <Button className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl py-3 shadow-sm hover:shadow-md transition-all">
+                  <span className="mr-2">📞</span>
+                  Call Emergency Services
                 </Button>
-                <Button variant="outline" className="w-full bg-transparent">
-                  ✓ Verify Report
+                <Button
+                  variant="outline"
+                  className="w-full bg-white border-red-300 text-red-700 hover:bg-red-50 rounded-xl py-3"
+                >
+                  <span className="mr-2">📋</span>
+                  Report Update
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full bg-white border-red-300 text-red-700 hover:bg-red-50 rounded-xl py-3"
+                >
+                  <span className="mr-2">✓</span>
+                  Verify Report
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Reported By */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Reported By</CardTitle>
+            <Card className="shadow-sm border-gray-200 rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Reported By</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm">
                     {incident.reporter_name ? incident.reporter_name.charAt(0).toUpperCase() : "A"}
                   </div>
                   <div>
-                    <div className="font-semibold">{incident.reporter_name || "Anonymous"}</div>
-                    <div className="text-sm text-gray-500">Citizen Reporter</div>
+                    <div className="font-semibold text-gray-900">{incident.reporter_name || "Anonymous"}</div>
+                    <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg inline-block">
+                      Citizen Reporter
+                    </div>
                   </div>
                 </div>
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2 text-sm text-gray-600">
                   <div>
-                    Reported:{" "}
+                    <span className="font-medium">Reported:</span>{" "}
                     {new Date(incident.created_at).toLocaleDateString("en-US", {
                       weekday: "long",
                       year: "numeric",
@@ -559,44 +593,56 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                       minute: "2-digit",
                     })}
                   </div>
-                  <div className="mt-1">Status: {incident.verified ? "Verified" : "Unverified"}</div>
+                  <div>
+                    <span className="font-medium">Status:</span>{" "}
+                    <span className={incident.verified ? "text-green-600" : "text-orange-600"}>
+                      {incident.verified ? "Verified" : "Unverified"}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Incident Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Incident Details</CardTitle>
+            <Card className="shadow-sm border-gray-200 rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Incident Details</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">0</div>
+                <div className="grid grid-cols-2 gap-4 text-center mb-6">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="text-3xl font-bold text-gray-900 mb-1">0</div>
                     <div className="text-sm text-gray-500">Casualties</div>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">0</div>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="text-3xl font-bold text-gray-900 mb-1">0</div>
                     <div className="text-sm text-gray-500">Responders</div>
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Media Files:</span>
-                    <span className="font-medium">{incident.media?.length || 0}</span>
+                    <span className="font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                      {incident.media?.length || 0}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Response Status:</span>
                     <span
-                      className={`font-medium ${incident.status === "resolved" ? "text-green-600" : "text-yellow-600"}`}
+                      className={`font-medium px-2 py-1 rounded-full text-xs ${
+                        incident.status === "resolved" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      }`}
                     >
                       {incident.status ? incident.status.replace("_", " ") : "pending"}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Verification:</span>
-                    <span className={`font-medium ${incident.verified ? "text-green-600" : "text-gray-600"}`}>
+                    <span
+                      className={`font-medium px-2 py-1 rounded-full text-xs ${
+                        incident.verified ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
                       {incident.verified ? "Verified" : "Unverified"}
                     </span>
                   </div>
@@ -605,9 +651,9 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             </Card>
 
             {/* Admin Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Actions</CardTitle>
+            <Card className="shadow-sm border-gray-200 rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Admin Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
