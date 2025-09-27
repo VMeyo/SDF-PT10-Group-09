@@ -1,0 +1,176 @@
+/* Admin Dashboard Specific Styles - Matching User Dashboard Exactly */
+
+/* Updated to use same class names as user dashboard for consistency */
+/* Admin dashboard now uses user-dashboard-container class, so we extend those styles */
+
+/* Admin-specific overrides and extensions */
+.user-dashboard-container .user-sidebar-logo {
+  /* Using gradient from auth page for admin logo */
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .user-nav-item.active {
+  /* Using gradient from auth page for active nav items */
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  color: white;
+}
+
+.user-dashboard-container .user-action-btn.primary {
+  /* Using gradient from auth page for primary action buttons */
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  color: white;
+  border: none;
+}
+
+.user-dashboard-container .user-action-btn.primary:hover {
+  /* Gradient hover effect matching auth page */
+  opacity: 0.9;
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .user-profile-avatar {
+  /* Using gradient from auth page for profile avatar */
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .user-report-btn {
+  /* Using gradient from auth page for report button */
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  color: white;
+  border: none;
+}
+
+.user-dashboard-container .user-report-btn:hover {
+  /* Gradient hover effect matching auth page */
+  opacity: 0.9;
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+}
+
+/* Enhanced animations matching user dashboard */
+.user-dashboard-container .fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* Loading state styling matching user dashboard */
+.user-dashboard-container .dashboard-loading {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f3f4f6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-dashboard-container .dashboard-loading-content {
+  text-align: center;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.user-dashboard-container .dashboard-loading-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid var(--ajali-gradient-start);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+/* Admin-specific gradient enhancements */
+.user-dashboard-container .dashboard-stat-card.active-reports .dashboard-stat-card-icon {
+  background: linear-gradient(135deg, var(--ajali-gradient-start), #ef4444);
+}
+
+.user-dashboard-container .dashboard-stat-card.critical .dashboard-stat-card-icon {
+  background: linear-gradient(135deg, #f97316, var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .dashboard-stat-card.responders .dashboard-stat-card-icon {
+  background: linear-gradient(135deg, #3b82f6, var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .dashboard-stat-card.resolved .dashboard-stat-card-icon {
+  background: linear-gradient(135deg, #22c55e, var(--ajali-gradient-start));
+}
+
+/* Enhanced critical alert styling with gradient */
+.user-dashboard-container .dashboard-critical-alert-icon {
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+}
+
+.user-dashboard-container .dashboard-critical-alert-btn {
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  border: none;
+}
+
+.user-dashboard-container .dashboard-critical-alert-btn:hover {
+  opacity: 0.9;
+}
+
+/* Enhanced search input focus with gradient ring */
+.user-dashboard-container .dashboard-search-input:focus {
+  outline: none;
+  border-color: var(--ajali-gradient-start);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.user-dashboard-container .dashboard-filter-select:focus {
+  outline: none;
+  border-color: var(--ajali-gradient-start);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+/* Admin-specific responsive enhancements */
+@media (max-width: 768px) {
+  .user-dashboard-container .user-header-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .user-dashboard-container .user-report-btn {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .user-dashboard-container .user-alerts-badge {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Additional gradient animations for admin dashboard */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.user-dashboard-container .user-nav-item.active:hover {
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  background-size: 200% 200%;
+  animation: gradientShift 2s ease infinite;
+}
+
+/* Enhanced sidebar status with gradient accent */
+.user-dashboard-container .sidebar-status-dot {
+  background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
