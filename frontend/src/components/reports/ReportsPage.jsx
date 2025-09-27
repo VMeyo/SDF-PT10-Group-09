@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "../ui/Card"
-import { Button } from "../ui/Button"
+import "./ReportsPage.css"
 
 export const ReportsPage = () => {
   const [stats, setStats] = useState({
@@ -27,6 +26,67 @@ export const ReportsPage = () => {
   useEffect(() => {
     applyFilters()
   }, [reports, searchTerm, statusFilter])
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Date not available"
+
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return "Invalid date"
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    } catch (error) {
+      return "Date not available"
+    }
+  }
+
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return "Date not available"
+
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return "Invalid date"
+
+      const now = new Date()
+      const diffInMinutes = Math.floor((now - date) / (1000 * 60))
+
+      if (diffInMinutes < 1) return "Just now"
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+
+      const diffInHours = Math.floor(diffInMinutes / 60)
+      if (diffInHours < 24) return `${diffInHours}h ago`
+
+      const diffInDays = Math.floor(diffInHours / 24)
+      if (diffInDays < 7) return `${diffInDays}d ago`
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    } catch (error) {
+      return "Date not available"
+    }
+  }
+
+  const getIncidentIcon = (title) => {
+    const titleLower = title.toLowerCase()
+    if (titleLower.includes("fire")) return "🔥"
+    if (titleLower.includes("accident") || titleLower.includes("crash")) return "🚗"
+    if (titleLower.includes("pothole")) return "⚠️"
+    if (titleLower.includes("traffic")) return "🚦"
+    if (titleLower.includes("dump")) return "🗑️"
+    if (titleLower.includes("water") || titleLower.includes("flood")) return "💧"
+    if (titleLower.includes("power") || titleLower.includes("electric")) return "⚡"
+    return "⚠️"
+  }
+
+  const getMediaCount = () => Math.floor(Math.random() * 5) + 1
+
+  const getResponderCount = () => Math.floor(Math.random() * 10)
 
   const fetchReports = async () => {
     try {
@@ -99,271 +159,244 @@ export const ReportsPage = () => {
     setFilteredReports(filtered)
   }
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: "bg-orange-100 text-orange-800 border border-orange-200",
-      resolved: "bg-green-100 text-green-800 border border-green-200",
-      rejected: "bg-red-100 text-red-800 border border-red-200",
-      responding: "bg-blue-100 text-blue-800 border border-blue-200",
-    }
-    return badges[status] || badges.pending
-  }
-
-  const getSeverityColor = (severity) => {
-    const colors = {
-      high: "text-red-600",
-      medium: "text-yellow-600",
-      low: "text-green-600",
-    }
-    return colors[severity] || colors.medium
-  }
-
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+      <div className="loading-skeleton">
+        <div className="skeleton-item" style={{ height: "2rem", width: "33%", marginBottom: "2rem" }}></div>
+        <div className="stats-grid">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton-item" style={{ height: "6rem" }}></div>
+          ))}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="reports-container">
+      <div className="reports-header">
         <div>
-          <div className="flex items-center space-x-3 mb-2">
-            <button className="flex items-center text-gray-600 hover:text-gray-800">
-              <span className="mr-2">←</span>
-              <span className="text-sm">Back to Dashboard</span>
-            </button>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">My Reports</h1>
-          <p className="text-gray-600">Manage your incident reports and track their status</p>
+          <h1 className="reports-title">My Reports</h1>
+          <p className="reports-subtitle">Manage your incident reports and track their status</p>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs">🔔</span>
-            </div>
-            <span className="text-sm font-medium">Alerts</span>
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{stats.pending}</span>
-            <span className="text-xs text-gray-500 ml-2">Pending Reports</span>
+        <div className="alert-card info" style={{ marginBottom: 0, maxWidth: "300px" }}>
+          <div className="alert-icon">🔔</div>
+          <div>
+            <span style={{ fontWeight: 600, color: "#1e40af" }}>Alerts</span>
+            <div style={{ fontSize: "0.875rem", color: "#3730a3" }}>{stats.pending} Pending Reports</div>
           </div>
         </div>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-600">Total Reports</p>
-                <p className="text-3xl font-bold text-blue-700">{stats.totalReports}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 text-xl">⚠️</span>
-              </div>
+      <div className="stats-grid">
+        <div className="stat-card total">
+          <div className="stat-card-content">
+            <div className="stat-info">
+              <h3>Total Reports</h3>
+              <div className="stat-number">{stats.totalReports}</div>
+              <div className="stat-label">All time</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="stat-icon">📊</div>
+          </div>
+        </div>
 
-        <Card className="bg-orange-50 border-orange-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-600">Pending</p>
-                <p className="text-3xl font-bold text-orange-700">{stats.pending}</p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <span className="text-orange-600 text-xl">⏰</span>
-              </div>
+        <div className="stat-card pending">
+          <div className="stat-card-content">
+            <div className="stat-info">
+              <h3>Pending</h3>
+              <div className="stat-number">{stats.pending}</div>
+              <div className="stat-label">Under review</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="stat-icon">⏰</div>
+          </div>
+        </div>
 
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-600">Resolved</p>
-                <p className="text-3xl font-bold text-green-700">{stats.resolved}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 text-xl">✅</span>
-              </div>
+        <div className="stat-card resolved">
+          <div className="stat-card-content">
+            <div className="stat-info">
+              <h3>Resolved</h3>
+              <div className="stat-number">{stats.resolved}</div>
+              <div className="stat-label">Successfully handled</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="stat-icon">✅</div>
+          </div>
+        </div>
 
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-red-600">Rejected</p>
-                <p className="text-3xl font-bold text-red-700">{stats.rejected}</p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <span className="text-red-600 text-xl">⚠️</span>
-              </div>
+        <div className="stat-card rejected">
+          <div className="stat-card-content">
+            <div className="stat-info">
+              <h3>Rejected</h3>
+              <div className="stat-number">{stats.rejected}</div>
+              <div className="stat-label">Needs revision</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="stat-icon">❌</div>
+          </div>
+        </div>
       </div>
 
-      {/* Alert Messages */}
       {stats.rejected > 0 && (
-        <div className="space-y-4 mb-6">
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <span className="text-red-500">⚠️</span>
-                <p className="text-red-800">
-                  <span className="font-medium">You have {stats.rejected} rejected report(s).</span> Check your email
-                  for details from the admin team.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="alert-card warning">
+          <div className="alert-icon">⚠️</div>
+          <p style={{ color: "#92400e", margin: 0 }}>
+            <span style={{ fontWeight: 600 }}>You have {stats.rejected} rejected report(s).</span> Check your email for
+            details from the admin team.
+          </p>
         </div>
       )}
 
       {stats.pending > 0 && (
-        <div className="space-y-4 mb-6">
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <span className="text-blue-500">ℹ️</span>
-                <p className="text-blue-800">
-                  <span className="font-medium">
-                    {stats.pending} of your reports are currently under investigation.
-                  </span>{" "}
-                  You'll receive email updates as they progress.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="alert-card info">
+          <div className="alert-icon">ℹ️</div>
+          <p style={{ color: "#1e40af", margin: 0 }}>
+            <span style={{ fontWeight: 600 }}>{stats.pending} of your reports are currently under investigation.</span>{" "}
+            You'll receive email updates as they progress.
+          </p>
         </div>
       )}
 
-      {/* Search and Filter */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative">
+      <div className="filters-section">
+        <div className="search-input">
           <input
             type="text"
             placeholder="Search your reports..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-96 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
         </div>
-        <div className="flex items-center space-x-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
+        <div className="filter-controls">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
             <option>All Status</option>
             <option>Pending</option>
             <option>Resolved</option>
             <option>Rejected</option>
             <option>Responding</option>
           </select>
-          <p className="text-sm text-gray-600">{filteredReports.length} reports found</p>
+          <div className="results-count">{filteredReports.length} reports found</div>
         </div>
       </div>
 
-      {/* Reports List */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Your Reports</h2>
-        <div className="space-y-4">
-          {filteredReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">🚗</span>
-                        <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
-                      </div>
-                      <div className="flex space-x-2">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusBadge(report.status)}`}>
-                          {report.status}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${getSeverityColor(report.severity)}`}
-                        >
-                          {report.severity}
-                        </span>
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
-                          <span className="w-2 h-2 bg-white rounded-full mr-1"></span>
-                          Verified
-                        </span>
-                      </div>
-                    </div>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 600, color: "#1e293b", marginBottom: "1.5rem" }}>Your Reports</h2>
+        <div className="reports-list">
+          {filteredReports.map((report) => {
+            const mediaCount = getMediaCount()
+            const responderCount = getResponderCount()
+            const incidentIcon = getIncidentIcon(report.title)
 
-                    <p className="text-gray-600 mb-4 line-clamp-2">{report.description}</p>
+            return (
+              <div key={report.id} className={`report-card ${report.severity}`}>
+                <div className="report-card-header">
+                  <div className={`status-indicator ${report.status}`}></div>
 
-                    <div className="flex items-center space-x-6 text-sm text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <span>📍</span>
-                        <span>{report.location || "Location not specified"}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span>📅</span>
-                        <span>{new Date(report.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span>📷</span>
-                        <span>{Math.floor(Math.random() * 5) + 1} media</span>
-                      </div>
-                    </div>
-
-                    {report.status === "responding" && (
-                      <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                        <p className="text-purple-800 text-sm">
-                          <span className="font-medium">Emergency Response Active:</span> Emergency services are
-                          responding to this incident. Thank you for your report.
-                        </p>
-                      </div>
-                    )}
+                  <div className="verified-badge">
+                    <span>✓</span>
+                    Verified
                   </div>
 
-                  <div className="flex space-x-2 ml-4">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <span className="text-gray-400">👁️</span>
-                    </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <span className="text-gray-400">✏️</span>
-                    </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <span className="text-gray-400">🗑️</span>
-                    </button>
+                  <div className="media-indicator">
+                    <svg className="media-star" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                      />
+                    </svg>
+                    <span className="media-count">{mediaCount} media files</span>
+                  </div>
+
+                  <div className={`header-status-badge ${report.severity}`}>
+                    {report.severity?.toUpperCase() || "MEDIUM"}
+                  </div>
+
+                  <div className="time-indicator">{getTimeAgo(report.created_at)}</div>
+                </div>
+
+                <div className="report-card-content">
+                  <div className="incident-type-badge">
+                    <span>{incidentIcon}</span>
+                    {report.title.split(" ")[0] || "Incident"}
+                  </div>
+
+                  <h3 className="incident-title">{report.title}</h3>
+
+                  <p className="incident-description">{report.description}</p>
+
+                  <div className="incident-meta">
+                    <div className="meta-item">
+                      <svg className="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <span>{report.location || "Location not specified"}</span>
+                    </div>
+
+                    <div className="meta-item">
+                      <svg className="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      <span>{responderCount} responders</span>
+                    </div>
+                  </div>
+
+                  <div className="responder-info">
+                    <div className="reporter-info">
+                      <div className="reporter-avatar">M</div>
+                      <span className="reporter-name">by Mike Chen</span>
+                    </div>
+
+                    {report.status === "responding" && <div className="responding-badge">Responding</div>}
+                  </div>
+
+                  <div className="card-actions">
+                    <button className="action-btn">View Details</button>
+                    <button className="action-btn primary">Assign</button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                {report.status === "responding" && (
+                  <div
+                    style={{
+                      margin: "1rem 1.5rem",
+                      padding: "1rem",
+                      background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                      border: "1px solid #93c5fd",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <p style={{ color: "#1e40af", fontSize: "0.875rem", margin: 0 }}>
+                      <span style={{ fontWeight: 600 }}>Emergency Response Active:</span> Emergency services are
+                      responding to this incident. Thank you for your report.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {filteredReports.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-lg font-semibold mb-2">No reports found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search or filters to see more results.</p>
-              <Button className="bg-red-500 hover:bg-red-600 text-white">+ Report New Incident</Button>
-            </CardContent>
-          </Card>
+          <div className="empty-state">
+            <div className="empty-state-icon">📋</div>
+            <h3>No reports found</h3>
+            <p>Try adjusting your search or filters to see more results.</p>
+            <button className="primary-button">+ Report New Incident</button>
+          </div>
         )}
       </div>
     </div>
