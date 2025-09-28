@@ -281,6 +281,10 @@ export const EmergencyDashboard = () => {
                           <span>{report.media_count} media</span>
                         </div>
                       )}
+                      <div className="report-reporter">
+                        <span className="meta-icon">👤</span>
+                        <span>by {report.reporter_name || report.user?.name || "Unknown Reporter"}</span>
+                      </div>
                     </div>
                   </div>
 

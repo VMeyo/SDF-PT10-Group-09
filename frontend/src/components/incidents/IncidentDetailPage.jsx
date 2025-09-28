@@ -15,15 +15,9 @@ const IncidentMap = ({ incident }) => {
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   useEffect(() => {
-    console.log("[v0] IncidentMap - Starting map initialization")
-    console.log("[v0] API Key available:", !!GOOGLE_MAPS_API_KEY)
-    console.log("[v0] Incident data:", incident)
-
     if (incident && incident.latitude && incident.longitude) {
-      console.log("[v0] Coordinates found:", incident.latitude, incident.longitude)
       loadGoogleMapsScript()
     } else {
-      console.log("[v0] Missing coordinates - latitude:", incident?.latitude, "longitude:", incident?.longitude)
       setLoading(false)
       setError("Location coordinates not available")
     }
@@ -31,36 +25,28 @@ const IncidentMap = ({ incident }) => {
 
   const loadGoogleMapsScript = () => {
     if (!GOOGLE_MAPS_API_KEY) {
-      console.log("[v0] Google Maps API key is missing")
       setError("Google Maps API key is missing")
       setLoading(false)
       return
     }
 
     if (window.google && window.google.maps) {
-      console.log("[v0] Google Maps already loaded, initializing map")
       initializeMap()
       return
     }
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
     if (existingScript) {
-      console.log("[v0] Google Maps script already exists, waiting for load")
       existingScript.addEventListener("load", initializeMap)
       return
     }
 
-    console.log("[v0] Loading Google Maps script")
     const script = document.createElement("script")
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`
     script.async = true
     script.defer = true
-    script.onload = () => {
-      console.log("[v0] Google Maps script loaded successfully")
-      initializeMap()
-    }
-    script.onerror = (error) => {
-      console.error("[v0] Failed to load Google Maps script:", error)
+    script.onload = initializeMap
+    script.onerror = () => {
       setError("Failed to load Google Maps - Please check your internet connection")
       setLoading(false)
     }
@@ -68,18 +54,8 @@ const IncidentMap = ({ incident }) => {
   }
 
   const initializeMap = () => {
-    console.log("[v0] Initializing map...")
-
-    if (!mapRef.current) {
-      console.error("[v0] Map container ref not available")
+    if (!mapRef.current || !window.google || !window.google.maps) {
       setError("Map container not ready")
-      setLoading(false)
-      return
-    }
-
-    if (!window.google || !window.google.maps) {
-      console.error("[v0] Google Maps API not available")
-      setError("Google Maps API not loaded")
       setLoading(false)
       return
     }
@@ -88,10 +64,7 @@ const IncidentMap = ({ incident }) => {
       const lat = Number.parseFloat(incident.latitude)
       const lng = Number.parseFloat(incident.longitude)
 
-      console.log("[v0] Parsed coordinates:", { lat, lng })
-
       if (isNaN(lat) || isNaN(lng)) {
-        console.error("[v0] Invalid coordinates:", incident.latitude, incident.longitude)
         setError("Invalid location coordinates")
         setLoading(false)
         return
@@ -110,7 +83,6 @@ const IncidentMap = ({ incident }) => {
         ],
       }
 
-      console.log("[v0] Creating Google Map with options:", mapOptions)
       const googleMap = new window.google.maps.Map(mapRef.current, mapOptions)
 
       // Add marker for the incident
@@ -144,11 +116,9 @@ const IncidentMap = ({ incident }) => {
         infoWindow.open(googleMap, marker)
       })
 
-      console.log("[v0] Map initialized successfully")
       setMap(googleMap)
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Map initialization error:", error)
       setError(`Failed to initialize map: ${error.message}`)
       setLoading(false)
     }

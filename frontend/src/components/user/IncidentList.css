@@ -1,0 +1,327 @@
+/* Created separate CSS file for IncidentList component styles */
+
+.incident-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.incident-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.incident-card:hover {
+  background-color: #f9fafb;
+}
+
+.incident-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.incident-title-section {
+  flex: 1;
+}
+
+.incident-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.incident-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+}
+
+.status-approved,
+.status-verified {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-in-progress,
+.status-under-investigation {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-pending,
+.status-reported {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
+.status-rejected {
+  background-color: #fecaca;
+  color: #991b1b;
+}
+
+.status-default {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.severity-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  color: white;
+}
+
+.severity-critical {
+  background-color: #ef4444;
+}
+
+.severity-high {
+  background-color: #f97316;
+}
+
+.severity-medium {
+  background-color: #eab308;
+}
+
+.severity-low {
+  background-color: #22c55e;
+}
+
+.severity-default {
+  background-color: #6b7280;
+}
+
+.verified-badge {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background-color: #dcfce7;
+  color: #166534;
+  border-radius: 9999px;
+}
+
+.incident-description {
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.incident-details {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.incident-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.incident-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.incident-status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.status-value {
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-button {
+  color: #2563eb;
+}
+
+.view-button:hover {
+  background-color: #eff6ff;
+}
+
+/* Added styles for edit and delete buttons */
+.edit-button {
+  color: #059669;
+  border-color: #059669;
+}
+
+.edit-button:hover {
+  background-color: #ecfdf5;
+}
+
+.edit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-button {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.delete-button:hover {
+  background-color: #fef2f2;
+}
+
+.delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.empty-state-icon {
+  font-size: 3.75rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-description {
+  color: #6b7280;
+}
+
+.filter-results {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Added modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+}
+
+.modal-close:hover {
+  color: #374151;
+}
+
+.modal-form {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}

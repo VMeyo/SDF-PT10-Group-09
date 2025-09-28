@@ -512,6 +512,43 @@
   border-color: #2563eb;
 }
 
+/* Added styles for edit and delete buttons */
+.action-btn.edit-btn {
+  color: #059669;
+  border-color: #059669;
+}
+
+.action-btn.edit-btn:hover {
+  background: #ecfdf5;
+  border-color: #047857;
+}
+
+.action-btn.edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #d1d5db;
+}
+
+.action-btn.delete-btn {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.action-btn.delete-btn:hover {
+  background: #fef2f2;
+  border-color: #b91c1c;
+}
+
+.action-btn.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+  border-color: #d1d5db;
+}
+
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "../ui/Card"
 import { UserManagement } from "./UserManagement"
 import { ReportManagement } from "./ReportManagement"
+import "../../styles/mobile-fixes.css"
 
 export const AdminControlPanel = () => {
   const [activeTab, setActiveTab] = useState("Overview")
@@ -37,6 +38,14 @@ export const AdminControlPanel = () => {
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         setStats(statsData)
+      } else {
+        console.log("[v0] Admin stats API failed, using default values")
+        setStats({
+          totalReports: 0,
+          activeReports: 0,
+          totalUsers: 0,
+          avgResponse: "0min",
+        })
       }
 
       const usersResponse = await fetch(`${API_BASE}/users`, {
@@ -49,9 +58,39 @@ export const AdminControlPanel = () => {
       if (usersResponse.ok) {
         const usersData = await usersResponse.json()
         setUsers(usersData)
+        setStats((prev) => ({
+          ...prev,
+          totalUsers: usersData.length,
+        }))
+      } else {
+        console.log("[v0] Users API failed")
+        setUsers([])
+      }
+
+      const reportsResponse = await fetch(`${API_BASE}/incidents`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (reportsResponse.ok) {
+        const reportsData = await reportsResponse.json()
+        setStats((prev) => ({
+          ...prev,
+          totalReports: reportsData.length,
+          activeReports: reportsData.filter((r) => r.status !== "resolved" && r.status !== "rejected").length,
+        }))
       }
     } catch (error) {
       console.error("Error fetching admin data:", error)
+      setStats({
+        totalReports: 0,
+        activeReports: 0,
+        totalUsers: 0,
+        avgResponse: "0min",
+      })
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -93,7 +132,23 @@ export const AdminControlPanel = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div>
             <div className="flex items-center space-x-3 mb-2">
-              <button className="flex items-center text-gray-600 hover:text-gray-800 transition-colors">
+              <button
+                className="back-to-dashboard-mobile"
+                onClick={() => {
+                  console.log("[v0] Back button clicked")
+                  // Try multiple navigation strategies for better mobile support
+                  if (window.history.length > 1) {
+                    console.log("[v0] Using history.back()")
+                    window.history.back()
+                  } else if (window.location.pathname !== "/") {
+                    console.log("[v0] Navigating to root")
+                    window.location.href = "/"
+                  } else {
+                    console.log("[v0] Reloading page")
+                    window.location.reload()
+                  }
+                }}
+              >
                 <span className="mr-2">←</span>
                 <span className="text-sm">Back to Dashboard</span>
               </button>

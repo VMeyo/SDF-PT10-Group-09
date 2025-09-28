@@ -52,40 +52,11 @@ export const ReportManagement = () => {
         setReports(data)
       } else {
         console.log("[v0] API response not ok, status:", response.status)
-        const mockReports = [
-          {
-            id: 1,
-            title: "Road Accident on Main Street",
-            description: "Multiple vehicle collision blocking traffic",
-            location: "Main Street & 5th Avenue",
-            category: "Road Accident",
-            severity: "high",
-            status: "pending",
-            reporter_name: "John Doe",
-            reporter_email: "john@example.com",
-            created_at: new Date().toISOString(),
-            media_count: 3,
-            verified: false,
-          },
-          {
-            id: 2,
-            title: "Building Fire Downtown",
-            description: "Smoke visible from residential building",
-            location: "Downtown District",
-            category: "Fire",
-            severity: "critical",
-            status: "in_progress",
-            reporter_name: "Jane Smith",
-            reporter_email: "jane@example.com",
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            media_count: 5,
-            verified: true,
-          },
-        ]
-        setReports(mockReports)
+        setReports([])
       }
     } catch (error) {
       console.error("[v0] Error fetching reports:", error)
+      setReports([])
     } finally {
       setLoading(false)
     }
@@ -143,8 +114,8 @@ export const ReportManagement = () => {
   const calculateStats = () => {
     setStats({
       total: reports.length,
-      pending: reports.filter((r) => r.status === "pending").length,
-      inProgress: reports.filter((r) => r.status === "in_progress").length,
+      pending: reports.filter((r) => r.status === "pending" || r.status === "reported").length,
+      inProgress: reports.filter((r) => r.status === "in_progress" || r.status === "under_investigation").length,
       approved: reports.filter((r) => r.status === "approved").length,
       rejected: reports.filter((r) => r.status === "rejected").length,
     })
@@ -169,24 +140,33 @@ export const ReportManagement = () => {
         )
         setReports(updatedReports)
 
+        // Award points for approved incidents
         if (newStatus === "approved") {
           try {
-            await fetch(`${API_BASE}/incidents/${reportId}/award-points`, {
+            const pointsResponse = await fetch(`${API_BASE}/incidents/${reportId}/award-points`, {
               method: "PATCH",
               headers: {
                 Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
               },
             })
-            console.log("[v0] Points awarded for approved incident")
+            if (pointsResponse.ok) {
+              console.log("[v0] Points awarded for approved incident")
+            } else {
+              console.log("[v0] Points award failed but status updated")
+            }
           } catch (error) {
             console.error("[v0] Error awarding points:", error)
           }
         }
 
         console.log("[v0] Report status updated successfully")
+        // Show success feedback
+        alert(`Report status updated to ${newStatus}`)
       } else {
-        console.log("[v0] Failed to update report status, status:", response.status)
-        alert("Failed to update report status. Please try again.")
+        const errorData = await response.json().catch(() => ({}))
+        console.log("[v0] Failed to update report status, status:", response.status, errorData)
+        alert(errorData.message || errorData.msg || "Failed to update report status. Please try again.")
       }
     } catch (error) {
       console.error("[v0] Error updating report status:", error)
@@ -207,23 +187,25 @@ export const ReportManagement = () => {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
 
       if (response.ok) {
-        // Remove from both reports and filteredReports
         const updatedReports = reports.filter((report) => report.id !== reportId)
         setReports(updatedReports)
 
-        // Close detail view if deleted report was being viewed
         if (selectedReportId && selectedReportId === reportId) {
           handleBackToList()
         }
 
         console.log("[v0] Report deleted successfully")
+        // Show success message
+        alert("Report deleted successfully")
       } else {
-        console.log("[v0] Failed to delete report, status:", response.status)
-        alert("Failed to delete report. Please try again.")
+        const errorData = await response.json().catch(() => ({}))
+        console.log("[v0] Failed to delete report, status:", response.status, errorData)
+        alert(errorData.message || errorData.msg || "Failed to delete report. Please try again.")
       }
     } catch (error) {
       console.error("[v0] Error deleting report:", error)
@@ -234,15 +216,18 @@ export const ReportManagement = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "approved":
-        return "bg-green-100 text-green-800 border-green-200"
+      case "verified":
+        return "bg-green-100 text-green-800"
       case "in_progress":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "under_investigation":
+        return "bg-blue-100 text-blue-800"
       case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "reported":
+        return "bg-orange-100 text-orange-800"
       case "rejected":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -271,7 +256,6 @@ export const ReportManagement = () => {
   const handleBackToList = () => {
     setCurrentView("list")
     setSelectedReportId(null)
-    // Refresh reports when coming back from detail view
     fetchReports()
   }
 
@@ -294,10 +278,6 @@ export const ReportManagement = () => {
         <div>
           <h2 className="text-3xl font-bold mb-2">Report Management</h2>
           <p className="text-muted-foreground">Manage and review all incident reports</p>
-        </div>
-        <div className="flex space-x-2">
-          {/* Removed bulk update buttons as they are not in the API spec */}
-          <Button onClick={() => handleViewDetails(null)}>+ Create Report</Button>
         </div>
       </div>
 
@@ -407,112 +387,96 @@ export const ReportManagement = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredReports.map((report) => (
-              <div
-                key={report.id}
-                className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-start space-x-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedReports.includes(report.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedReports([...selectedReports, report.id])
-                      } else {
-                        setSelectedReports(selectedReports.filter((id) => id !== report.id))
-                      }
-                    }}
-                    className="mt-1 rounded"
-                  />
+              <div key={report.id} className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50">
+                {/* Report Header */}
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="font-semibold text-lg">{report.title}</h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(report.severity)}`}>
-                        {report.severity ? report.severity.toUpperCase() : "UNKNOWN"}
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold">{report.title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(report.status)}`}>
+                        {report.status === "reported"
+                          ? "reported"
+                          : report.status === "under_investigation"
+                            ? "under investigation"
+                            : report.status?.replace("_", " ") || "unknown"}
                       </span>
-                      <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(report.status)}`}>
-                        {report.status ? report.status.replace("_", " ").toUpperCase() : "UNKNOWN"}
+                      <span className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(report.severity)}`}>
+                        {report.severity || "medium"}
                       </span>
                       {report.verified && (
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full border border-green-200">
-                          ✓ Verified
-                        </span>
+                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Verified</span>
                       )}
                     </div>
-
-                    <p className="text-gray-600 mb-3 line-clamp-2">{report.description}</p>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500">
-                      <div>
-                        <span className="font-medium">Location:</span> {report.location || "Not specified"}
-                      </div>
-                      <div>
-                        <span className="font-medium">Category:</span> {report.category || "Uncategorized"}
-                      </div>
-                      <div>
-                        <span className="font-medium">Reporter:</span>{" "}
-                        {report.reporter_name || report.user?.name || "Anonymous"}
-                      </div>
-                      <div>
-                        <span className="font-medium">Date:</span> {new Date(report.created_at).toLocaleDateString()}
-                      </div>
-                      <div>
-                        <span className="font-medium">Media:</span> {report.media_count || report.media?.length || 0}{" "}
-                        files
-                      </div>
-                      <div>
-                        <span className="font-medium">ID:</span> #{report.id}
-                      </div>
-                    </div>
+                    <p className="text-gray-600 mb-3">{report.description}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-col space-y-2 ml-4">
-                  <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(report.id)}>
-                      View Details
-                    </Button>
+                {/* Report Details */}
+                <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
+                  <div className="flex items-center gap-1">
+                    <span>📍</span>
+                    <span>{report.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>🕒</span>
+                    <span>
+                      {new Date(report.created_at).toLocaleDateString()}{" "}
+                      {new Date(report.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span>by {report.reporter_name || "Unknown Reporter"}</span>
+                  </div>
+                  <div>
+                    <span>{report.media_count || 0} media files</span>
+                  </div>
+                </div>
 
-                    <select
-                      value={report.status}
-                      onChange={(e) => updateReportStatus(report.id, e.target.value)}
-                      disabled={updating === report.id}
-                      className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                {/* Status Change and Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">Change Status:</span>
+                      <select
+                        value={report.status}
+                        onChange={(e) => updateReportStatus(report.id, e.target.value)}
+                        disabled={updating === report.id}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateReportStatus(report.id, "in_progress")}
-                      disabled={updating === report.id || report.status === "approved"}
+                      onClick={() => handleViewDetails(report.id)}
                       className="text-blue-600 hover:bg-blue-50"
                     >
-                      {updating === report.id ? "Updating..." : "Start Review"}
+                      <span className="mr-1">👁️</span>
+                      View
                     </Button>
-
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => updateReportStatus(report.id, "approved")}
-                      disabled={updating === report.id || report.status === "approved"}
+                      onClick={() => handleViewDetails(report.id)}
                       className="text-green-600 hover:bg-green-50"
                     >
-                      Approve
+                      <span className="mr-1">✏️</span>
+                      Edit
                     </Button>
-
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => deleteReport(report.id)}
                       className="text-red-600 hover:bg-red-50"
                     >
+                      <span className="mr-1">🗑️</span>
                       Delete
                     </Button>
                   </div>

@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_BASE_URL
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sdf-pt10-group-09.onrender.com/api/v1"
 
 console.log("[v0] API_BASE configured as:", API_BASE)
 
@@ -106,9 +106,8 @@ export const userAPI = {
 }
 
 export const authAPI = {
-  // Register new user
   register: (data) =>
-    apiRequest("/auth/register", {
+    apiRequest("/auth/signup", {
       method: "POST",
       body: JSON.stringify(data),
     }),

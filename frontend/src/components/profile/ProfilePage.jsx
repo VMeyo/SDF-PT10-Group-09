@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "../../contexts/AuthContext"
+import "../../styles/mobile-fixes.css"
 
 export const ProfilePage = ({ onBack }) => {
   const { user } = useAuth()
@@ -113,8 +114,11 @@ export const ProfilePage = ({ onBack }) => {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={onBack}
-            className="flex items-center text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+            onClick={() => {
+              console.log("[v0] Profile back button clicked")
+              onBack()
+            }}
+            className="back-to-dashboard-mobile md:flex md:items-center md:text-gray-600 md:hover:text-gray-800 md:mb-4 md:transition-colors md:bg-transparent md:border-none md:p-0 md:min-h-auto md:font-normal"
           >
             <span className="mr-2">←</span>
             <span>Back to Dashboard</span>

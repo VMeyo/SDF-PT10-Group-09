@@ -200,9 +200,14 @@ export const IncidentForm = ({ onIncidentCreated }) => {
         })
         setMediaFiles([])
         setUploadProgress({})
+
+        if (window.refreshMapIncidents) {
+          window.refreshMapIncidents()
+        }
+
         onIncidentCreated({ ...data, mediaUrls })
       } else {
-        setError(data.msg || "Failed to report incident") // Flask uses 'msg' not 'message'
+        setError(data.msg || "Failed to report incident")
       }
     } catch (error) {
       setError("Network error. Please try again.")

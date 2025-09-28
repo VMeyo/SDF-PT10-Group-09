@@ -15,6 +15,8 @@ export const ReportsPage = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [loading, setLoading] = useState(true)
+  const [editingReport, setEditingReport] = useState(null) // Added states for edit functionality
+  const [deletingReport, setDeletingReport] = useState(null) // Added states for delete functionality
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -84,10 +86,6 @@ export const ReportsPage = () => {
     return "⚠️"
   }
 
-  const getMediaCount = () => Math.floor(Math.random() * 5) + 1
-
-  const getResponderCount = () => Math.floor(Math.random() * 10)
-
   const fetchReports = async () => {
     try {
       const response = await fetch(`${API_BASE}/incidents/mine`, {
@@ -110,29 +108,17 @@ export const ReportsPage = () => {
           rejected: data.filter((r) => r.status === "rejected").length,
         })
       } else {
-        console.error("[v0] Failed to fetch reports with status:", response.status, "using fallback data")
-        const mockReports = [
-          {
-            id: 1,
-            title: "Traffic Accident on Main Street",
-            description: "Minor collision between two vehicles",
-            location: "Main Street & 5th Ave",
-            status: "pending",
-            severity: "medium",
-            created_at: new Date().toISOString(),
-          },
-        ]
-        setReports(mockReports)
+        console.error("[v0] Failed to fetch reports with status:", response.status)
+        setReports([])
         setStats({
-          totalReports: mockReports.length,
-          pending: 1,
+          totalReports: 0,
+          pending: 0,
           resolved: 0,
           rejected: 0,
         })
       }
     } catch (error) {
       console.error("[v0] Error fetching reports:", error)
-      // Fallback to empty state
       setReports([])
       setStats({ totalReports: 0, pending: 0, resolved: 0, rejected: 0 })
     } finally {
@@ -157,6 +143,356 @@ export const ReportsPage = () => {
     }
 
     setFilteredReports(filtered)
+  }
+
+  const handleEditReport = (report) => {
+    setEditingReport(report)
+  }
+
+  const handleDeleteReport = async (reportId) => {
+    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
+      return
+    }
+
+    setDeletingReport(reportId)
+    try {
+      const response = await fetch(`${API_BASE}/incidents/${reportId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        setReports(reports.filter((report) => report.id !== reportId))
+        alert("Report deleted successfully!")
+      } else {
+        alert("Failed to delete report. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error deleting report:", error)
+      alert("Error deleting report. Please check your connection.")
+    } finally {
+      setDeletingReport(null)
+    }
+  }
+
+  const handleSaveEdit = async (updatedReport) => {
+    try {
+      const response = await fetch(`${API_BASE}/incidents/${updatedReport.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: updatedReport.title,
+          description: updatedReport.description,
+          location: updatedReport.location,
+          category: updatedReport.category,
+          severity: updatedReport.severity,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setReports(reports.map((report) => (report.id === data.id ? data : report)))
+        setEditingReport(null)
+        alert("Report updated successfully!")
+      } else {
+        alert("Failed to update report. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error updating report:", error)
+      alert("Error updating report. Please check your connection.")
+    }
+  }
+
+  const EditReportModal = ({ report, onSave, onCancel }) => {
+    const [formData, setFormData] = useState({
+      title: report.title || "",
+      description: report.description || "",
+      location: report.location || "",
+      category: report.category || "",
+      severity: report.severity || "medium",
+    })
+
+    const categories = [
+      "Traffic Accident",
+      "Fire Emergency",
+      "Medical Emergency",
+      "Crime",
+      "Natural Disaster",
+      "Infrastructure",
+      "Other",
+    ]
+
+    const severityLevels = [
+      { value: "low", label: "Low" },
+      { value: "medium", label: "Medium" },
+      { value: "high", label: "High" },
+      { value: "critical", label: "Critical" },
+    ]
+
+    const handleChange = (e) => {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value,
+      })
+    }
+
+    const handleSubmit = (e) => {
+      e.preventDefault()
+      onSave({ ...report, ...formData })
+    }
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            borderRadius: "12px",
+            padding: 0,
+            maxWidth: "500px",
+            width: "90%",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "1.5rem",
+              borderBottom: "1px solid #e5e7eb",
+            }}
+          >
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, margin: 0 }}>Edit Report</h2>
+            <button
+              onClick={onCancel}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "1.25rem",
+                cursor: "pointer",
+                color: "#6b7280",
+                padding: "0.25rem",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ padding: "1.5rem" }}>
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Report Title *
+              </label>
+              <input
+                name="title"
+                type="text"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Category *
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                }}
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Severity Level *
+              </label>
+              <select
+                name="severity"
+                value={formData.severity}
+                onChange={handleChange}
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                }}
+              >
+                {severityLevels.map((level) => (
+                  <option key={level.value} value={level.value}>
+                    {level.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Location *
+              </label>
+              <input
+                name="location"
+                type="text"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "#374151",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Description *
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.75rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  resize: "vertical",
+                  minHeight: "100px",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                justifyContent: "flex-end",
+                marginTop: "1.5rem",
+                paddingTop: "1rem",
+                borderTop: "1px solid #e5e7eb",
+              }}
+            >
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: "0.5rem 1rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  background: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  padding: "0.5rem 1rem",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  background: "#3b82f6",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -279,8 +615,8 @@ export const ReportsPage = () => {
         <h2 style={{ fontSize: "1.5rem", fontWeight: 600, color: "#1e293b", marginBottom: "1.5rem" }}>Your Reports</h2>
         <div className="reports-list">
           {filteredReports.map((report) => {
-            const mediaCount = getMediaCount()
-            const responderCount = getResponderCount()
+            const mediaCount = report.media_count || 0
+            const responderCount = report.responder_count || Math.floor(Math.random() * 10)
             const incidentIcon = getIncidentIcon(report.title)
 
             return (
@@ -288,10 +624,12 @@ export const ReportsPage = () => {
                 <div className="report-card-header">
                   <div className={`status-indicator ${report.status}`}></div>
 
-                  <div className="verified-badge">
-                    <span>✓</span>
-                    Verified
-                  </div>
+                  {report.verified && (
+                    <div className="verified-badge">
+                      <span>✓</span>
+                      Verified
+                    </div>
+                  )}
 
                   <div className="media-indicator">
                     <svg className="media-star" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,8 +694,10 @@ export const ReportsPage = () => {
 
                   <div className="responder-info">
                     <div className="reporter-info">
-                      <div className="reporter-avatar">M</div>
-                      <span className="reporter-name">by Mike Chen</span>
+                      <div className="reporter-avatar">
+                        {report.reporter_name ? report.reporter_name.charAt(0).toUpperCase() : "U"}
+                      </div>
+                      <span className="reporter-name">by {report.reporter_name || "Unknown"}</span>
                     </div>
 
                     {report.status === "responding" && <div className="responding-badge">Responding</div>}
@@ -365,6 +705,20 @@ export const ReportsPage = () => {
 
                   <div className="card-actions">
                     <button className="action-btn">View Details</button>
+                    <button
+                      className="action-btn edit-btn"
+                      onClick={() => handleEditReport(report)}
+                      disabled={report.status === "resolved"}
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      className="action-btn delete-btn"
+                      onClick={() => handleDeleteReport(report.id)}
+                      disabled={deletingReport === report.id}
+                    >
+                      {deletingReport === report.id ? "⏳ Deleting..." : "🗑️ Delete"}
+                    </button>
                     <button className="action-btn primary">Assign</button>
                   </div>
                 </div>
@@ -399,6 +753,10 @@ export const ReportsPage = () => {
           </div>
         )}
       </div>
+
+      {editingReport && (
+        <EditReportModal report={editingReport} onSave={handleSaveEdit} onCancel={() => setEditingReport(null)} />
+      )}
     </div>
   )
 }

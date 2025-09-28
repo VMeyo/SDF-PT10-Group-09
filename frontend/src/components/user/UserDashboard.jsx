@@ -11,6 +11,7 @@ import { ProfilePage } from "../profile/ProfilePage"
 import "./../../styles/dashboard.css"
 import "./../../styles/sidebar.css"
 import "./../../styles/user-dashboard.css"
+import "./../../styles/mobile-fixes.css"
 
 export const UserDashboard = () => {
   const { user, logout } = useAuth()
@@ -20,6 +21,7 @@ export const UserDashboard = () => {
   const [userStats, setUserStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [userData, setUserData] = useState(null)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -27,6 +29,16 @@ export const UserDashboard = () => {
   useEffect(() => {
     fetchUserData()
   }, [])
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+    setIsMobileSidebarOpen(false) // Close mobile sidebar when tab changes
+  }
+
+  const toggleMobileSidebar = () => {
+    console.log("[v0] Toggling mobile sidebar, current state:", isMobileSidebarOpen)
+    setIsMobileSidebarOpen(!isMobileSidebarOpen)
+  }
 
   const fetchUserData = async () => {
     try {
@@ -130,6 +142,16 @@ export const UserDashboard = () => {
     fetchUserData() // Refresh stats
   }
 
+  const handleIncidentUpdated = (updatedIncident) => {
+    setIncidents(incidents.map((incident) => (incident.id === updatedIncident.id ? updatedIncident : incident)))
+    fetchUserData() // Refresh stats to reflect changes
+  }
+
+  const handleIncidentDeleted = (deletedIncidentId) => {
+    setIncidents(incidents.filter((incident) => incident.id !== deletedIncidentId))
+    fetchUserData() // Refresh stats to reflect changes
+  }
+
   const handleViewIncidentDetail = (incidentId) => {
     setSelectedIncidentId(incidentId)
     setActiveTab("incident-detail")
@@ -168,11 +190,18 @@ export const UserDashboard = () => {
 
   return (
     <div className="user-dashboard-container">
-      <div className="sidebar-container">
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-999 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      <div className={`sidebar-container ${isMobileSidebarOpen ? "open" : ""}`}>
         <div className="user-sidebar-header">
           <div className="sidebar-header-content">
             <div className="user-sidebar-logo">
-              <img src="./ajali.svg" alt="ajali logo"/>
+              <img src="./ajali.svg" alt="ajali logo" />
             </div>
             <div className="user-sidebar-brand">
               <h1>Ajali</h1>
@@ -194,7 +223,7 @@ export const UserDashboard = () => {
             {userTabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`user-nav-item ${activeTab === tab.id ? "active" : ""}`}
               >
                 <span className="user-nav-item-icon">{tab.icon}</span>
@@ -206,10 +235,10 @@ export const UserDashboard = () => {
 
         <div className="user-sidebar-actions">
           <h3 className="sidebar-actions-title">Quick Actions</h3>
-          <button onClick={() => setActiveTab("report")} className="user-action-btn primary">
+          <button onClick={() => handleTabChange("report")} className="user-action-btn primary">
             Report Accident
           </button>
-          <button onClick={() => setActiveTab("map")} className="user-action-btn secondary">
+          <button onClick={() => handleTabChange("map")} className="user-action-btn secondary">
             <span>🗺️</span>
             View Map
           </button>
@@ -255,7 +284,7 @@ export const UserDashboard = () => {
       </div>
 
       <div className="user-dashboard-content">
-        {activeTab === "profile" && <ProfilePage onBack={() => setActiveTab("overview")} />}
+        {activeTab === "profile" && <ProfilePage onBack={() => handleTabChange("overview")} />}
 
         {activeTab === "incident-detail" && selectedIncidentId && (
           <IncidentDetailPage
@@ -269,12 +298,20 @@ export const UserDashboard = () => {
           <>
             <header className="user-dashboard-header">
               <div className="user-header-content">
+                <button
+                  className="mobile-menu-toggle md:hidden"
+                  onClick={toggleMobileSidebar}
+                  aria-label="Toggle mobile menu"
+                >
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>☰</span>
+                </button>
+
                 <div className="user-header-info">
                   <h1>Emergency Dashboard</h1>
                   <p>Real-time accident reports and emergency response</p>
                 </div>
                 <div className="user-header-actions">
-                  <button onClick={() => setActiveTab("map")} className="user-view-map-btn">
+                  <button onClick={() => handleTabChange("map")} className="user-view-map-btn">
                     <span>📍</span>
                     <span>View Map</span>
                   </button>
@@ -283,7 +320,7 @@ export const UserDashboard = () => {
                     <span className="text">Alerts</span>
                     <span className="count">6</span>
                   </div>
-                  <button onClick={() => setActiveTab("report")} className="user-report-btn">
+                  <button onClick={() => handleTabChange("report")} className="user-report-btn">
                     <span>+</span>
                     <span>Report Accident</span>
                   </button>
@@ -409,6 +446,10 @@ export const UserDashboard = () => {
                               </div>
                               <h3 className="dashboard-report-card-title">{report.title}</h3>
                               <p className="dashboard-report-card-location">{report.location}</p>
+                              <div className="dashboard-report-card-reporter">
+                                <span className="reporter-icon">👤</span>
+                                <span>by {report.reporter_name || report.user?.name || "Unknown Reporter"}</span>
+                              </div>
                               <div className="dashboard-report-card-footer">
                                 <span className="dashboard-report-card-type">{report.incident_type}</span>
                                 <span
@@ -440,7 +481,12 @@ export const UserDashboard = () => {
 
               {activeTab === "incidents" && (
                 <div className="fade-in">
-                  <IncidentList incidents={incidents} onViewDetail={handleViewIncidentDetail} />
+                  <IncidentList
+                    incidents={incidents}
+                    onViewDetail={handleViewIncidentDetail}
+                    onIncidentUpdated={handleIncidentUpdated}
+                    onIncidentDeleted={handleIncidentDeleted}
+                  />
                 </div>
               )}
 
