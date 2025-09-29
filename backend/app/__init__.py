@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     # Enable CORS for frontend URLs
-    CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "http://localhost:5173", "https://sdf-pt-10-group-09-81kn.vercel.app"
+    CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "http://localhost:5173", "https://sdf-pt-10-group-09.vercel.app/"
 ]}})
 
     # Ensure MAIL_DEFAULT_SENDER is correctly set
