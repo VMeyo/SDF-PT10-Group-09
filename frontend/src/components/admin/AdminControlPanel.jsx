@@ -39,7 +39,6 @@ export const AdminControlPanel = () => {
         const statsData = await statsResponse.json()
         setStats(statsData)
       } else {
-        console.log("[v0] Admin stats API failed, using default values")
         setStats({
           totalReports: 0,
           activeReports: 0,
@@ -63,7 +62,6 @@ export const AdminControlPanel = () => {
           totalUsers: usersData.length,
         }))
       } else {
-        console.log("[v0] Users API failed")
         setUsers([])
       }
 
@@ -135,16 +133,11 @@ export const AdminControlPanel = () => {
               <button
                 className="back-to-dashboard-mobile"
                 onClick={() => {
-                  console.log("[v0] Back button clicked")
-                  // Try multiple navigation strategies for better mobile support
                   if (window.history.length > 1) {
-                    console.log("[v0] Using history.back()")
                     window.history.back()
                   } else if (window.location.pathname !== "/") {
-                    console.log("[v0] Navigating to root")
                     window.location.href = "/"
                   } else {
-                    console.log("[v0] Reloading page")
                     window.location.reload()
                   }
                 }}

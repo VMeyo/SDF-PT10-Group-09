@@ -41,21 +41,18 @@ export const ReportManagement = () => {
 
   const fetchReports = async () => {
     try {
-      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
       const response = await fetch(`${API_BASE}/incidents`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Fetched reports data:", data)
         setReports(data)
       } else {
-        console.log("[v0] API response not ok, status:", response.status)
         setReports([])
       }
     } catch (error) {
-      console.error("[v0] Error fetching reports:", error)
+      console.error("Error fetching reports:", error)
       setReports([])
     } finally {
       setLoading(false)
@@ -124,7 +121,6 @@ export const ReportManagement = () => {
   const updateReportStatus = async (reportId, newStatus, notes = "") => {
     setUpdating(reportId)
     try {
-      console.log("[v0] Updating report status:", reportId, newStatus)
       const response = await fetch(`${API_BASE}/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
@@ -150,26 +146,19 @@ export const ReportManagement = () => {
                 "Content-Type": "application/json",
               },
             })
-            if (pointsResponse.ok) {
-              console.log("[v0] Points awarded for approved incident")
-            } else {
-              console.log("[v0] Points award failed but status updated")
-            }
           } catch (error) {
-            console.error("[v0] Error awarding points:", error)
+            console.error("Error awarding points:", error)
           }
         }
 
-        console.log("[v0] Report status updated successfully")
         // Show success feedback
         alert(`Report status updated to ${newStatus}`)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.log("[v0] Failed to update report status, status:", response.status, errorData)
         alert(errorData.message || errorData.msg || "Failed to update report status. Please try again.")
       }
     } catch (error) {
-      console.error("[v0] Error updating report status:", error)
+      console.error("Error updating report status:", error)
       alert("Error updating report status. Please check your connection.")
     } finally {
       setUpdating(null)
@@ -182,7 +171,6 @@ export const ReportManagement = () => {
     }
 
     try {
-      console.log("[v0] Deleting report:", reportId)
       const response = await fetch(`${API_BASE}/incidents/${reportId}`, {
         method: "DELETE",
         headers: {
@@ -199,16 +187,14 @@ export const ReportManagement = () => {
           handleBackToList()
         }
 
-        console.log("[v0] Report deleted successfully")
         // Show success message
         alert("Report deleted successfully")
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.log("[v0] Failed to delete report, status:", response.status, errorData)
         alert(errorData.message || errorData.msg || "Failed to delete report. Please try again.")
       }
     } catch (error) {
-      console.error("[v0] Error deleting report:", error)
+      console.error("Error deleting report:", error)
       alert("Error deleting report. Please check your connection.")
     }
   }
