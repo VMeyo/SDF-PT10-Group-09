@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../../contexts/AuthContext"
 import { EmergencyDashboard } from "./EmergencyDashboard"
 import { ReportsPage } from "../reports/ReportsPage"
