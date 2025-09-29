@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "../ui/Card"
+import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
 import "../../styles/emergency-dashboard.css"
 
 export const EmergencyDashboard = () => {
@@ -16,6 +17,7 @@ export const EmergencyDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("All Types")
   const [severityFilter, setSeverityFilter] = useState("All Levels")
+  const [selectedIncident, setSelectedIncident] = useState(null)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -94,6 +96,39 @@ export const EmergencyDashboard = () => {
     if (diffInHours < 24) return `${diffInHours}h ago`
     const diffInDays = Math.floor(diffInHours / 24)
     return `${diffInDays}d ago`
+  }
+
+  const getGradientClass = (severity) => {
+    const gradients = {
+      critical: "gradient-critical",
+      high: "gradient-high",
+      medium: "gradient-medium",
+      low: "gradient-low",
+    }
+    return gradients[severity] || "gradient-medium"
+  }
+
+  const getStatusDotColor = (status) => {
+    const colors = {
+      pending: "status-dot-blue",
+      in_progress: "status-dot-blue",
+      resolved: "status-dot-green",
+      verified: "status-dot-green",
+    }
+    return colors[status] || "status-dot-blue"
+  }
+
+  const handleViewDetails = (incident) => {
+    setSelectedIncident(incident)
+  }
+
+  const handleBackFromDetail = () => {
+    setSelectedIncident(null)
+    fetchEmergencyData() // Refresh data when returning
+  }
+
+  if (selectedIncident) {
+    return <IncidentDetailPage incident={selectedIncident} onBack={handleBackFromDetail} isAdmin={true} />
   }
 
   if (loading) {
@@ -240,60 +275,80 @@ export const EmergencyDashboard = () => {
           </span>
         </div>
 
-        <div className="reports-grid">
+        <div className="modern-reports-grid">
           {filteredReports.length > 0 ? (
             filteredReports.map((report) => (
-              <Card key={report.id} className="report-card">
-                <CardContent>
-                  <div className="report-header">
-                    <div className="report-status">
-                      <div className={`severity-indicator ${report.severity}`}></div>
-                      <span className={`severity-badge ${report.severity}`}>{getSeverityBadge(report.severity)}</span>
-                      {report.verified && <span className="verified-badge">✓ Verified</span>}
-                    </div>
-                    <span className="report-timestamp">{formatTimeAgo(report.created_at)}</span>
-                  </div>
-
-                  <div className="report-content">
-                    <div className="report-main">
-                      <div className="incident-icon">
-                        <span>{getIncidentIcon(report.incident_type)}</span>
+              <div key={report.id} className={`modern-report-card ${getGradientClass(report.severity)}`}>
+                {/* Card Header with gradient background */}
+                <div className="modern-card-header">
+                  <div className="header-top">
+                    <div className={`status-dot ${getStatusDotColor(report.status)}`}></div>
+                    {report.verified && (
+                      <div className="verified-badge">
+                        <span className="verified-icon">✓</span>
+                        <span>Verified</span>
                       </div>
-                      <div className="report-details">
-                        <h3 className="report-title">{report.incident_type}</h3>
-                        <p className="report-subtitle">{report.title}</p>
-                        <p className="report-description">{report.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="report-meta">
-                      <div className="report-location">
-                        <span className="meta-icon">📍</span>
-                        <span>{report.location}</span>
-                      </div>
-                      <div className="report-responders">
-                        <span className="meta-icon">👥</span>
-                        <span>{report.responder_count || 0} responders</span>
-                      </div>
-                      {report.media_count > 0 && (
-                        <div className="report-media">
-                          <span className="meta-icon">📷</span>
-                          <span>{report.media_count} media</span>
-                        </div>
-                      )}
-                      <div className="report-reporter">
-                        <span className="meta-icon">👤</span>
-                        <span>by {report.reporter_name || report.user?.name || "Unknown Reporter"}</span>
-                      </div>
+                    )}
+                    <div className="star-section">
+                      <div className="star-icon">⭐</div>
+                      <div className="media-count">{report.media_count || 0} media files</div>
                     </div>
                   </div>
-
-                  <div className="report-actions">
-                    <button className="action-button primary">View Details</button>
-                    <button className="action-button secondary">Assign</button>
+                  <div className="header-bottom">
+                    <div className={`severity-badge-modern ${report.severity}`}>
+                      {getSeverityBadge(report.severity)}
+                    </div>
+                    <div className="timestamp-modern">{formatTimeAgo(report.created_at)}</div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Card Content */}
+                <div className="modern-card-content">
+                  <div className="incident-category">
+                    <span className="category-icon">{getIncidentIcon(report.incident_type)}</span>
+                    <span className="category-text">{report.incident_type}</span>
+                  </div>
+
+                  <h3 className="incident-title">{report.title}</h3>
+                  <p className="incident-description">{report.description}</p>
+
+                  <div className="incident-meta">
+                    <div className="meta-item">
+                      <span className="meta-icon">📍</span>
+                      <span>{report.location}</span>
+                    </div>
+                    {report.casualty_count > 0 && (
+                      <div className="meta-item casualties">
+                        <span className="meta-icon">🚨</span>
+                        <span>{report.casualty_count} casualties reported</span>
+                      </div>
+                    )}
+                    <div className="meta-item">
+                      <span className="meta-icon">👥</span>
+                      <span>{report.responder_count || 0} responders</span>
+                    </div>
+                  </div>
+
+                  <div className="reporter-section">
+                    <div className="reporter-avatar">
+                      {(report.reporter_name || report.user?.name || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <span className="reporter-name">
+                      by {report.reporter_name || report.user?.name || "Unknown Reporter"}
+                    </span>
+                    <div className={`status-badge ${report.status}`}>
+                      {report.status === "resolved" ? "Verified" : "Responding"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="modern-card-actions">
+                  <button className="action-btn view-details" onClick={() => handleViewDetails(report)}>
+                    View Details
+                  </button>
+                </div>
+              </div>
             ))
           ) : (
             <div className="empty-state">

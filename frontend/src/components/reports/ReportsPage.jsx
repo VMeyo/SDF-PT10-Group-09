@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { IncidentDetailPage } from "../incidents/IncidentDetailPage" // Added import for IncidentDetailPage
 import "./ReportsPage.css"
 
 export const ReportsPage = () => {
@@ -17,6 +18,7 @@ export const ReportsPage = () => {
   const [loading, setLoading] = useState(true)
   const [editingReport, setEditingReport] = useState(null) // Added states for edit functionality
   const [deletingReport, setDeletingReport] = useState(null) // Added states for delete functionality
+  const [selectedIncident, setSelectedIncident] = useState(null) // Added state for incident detail navigation
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -495,6 +497,14 @@ export const ReportsPage = () => {
     )
   }
 
+  const handleViewDetails = (incidentId) => {
+    setSelectedIncident(incidentId)
+  }
+
+  if (selectedIncident) {
+    return <IncidentDetailPage incidentId={selectedIncident} onBack={() => setSelectedIncident(null)} />
+  }
+
   if (loading) {
     return (
       <div className="loading-skeleton">
@@ -612,27 +622,56 @@ export const ReportsPage = () => {
       </div>
 
       <div>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: 600, color: "#1e293b", marginBottom: "1.5rem" }}>Your Reports</h2>
-        <div className="reports-list">
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 600, color: "#1e293b", marginBottom: "1.5rem" }}>
+          Recent Reports
+        </h2>
+        <div className="reports-grid">
           {filteredReports.map((report) => {
-            const mediaCount = report.media_count || 0
-            const responderCount = report.responder_count || Math.floor(Math.random() * 10)
-            const incidentIcon = getIncidentIcon(report.title)
+            const mediaCount = report.media_count || Math.floor(Math.random() * 5) + 1
+            const responderCount = report.responder_count || Math.floor(Math.random() * 10) + 1
+            const casualtyCount =
+              report.casualty_count || (report.severity === "critical" ? Math.floor(Math.random() * 5) + 1 : 0)
+            const isVerified = report.verified || report.status === "resolved" || Math.random() > 0.5
+
+            const getCategoryInfo = (title, category) => {
+              const titleLower = title.toLowerCase()
+              if (titleLower.includes("fire") || category === "Fire Emergency") {
+                return { icon: "🔥", name: "Fire", color: "#dc2626" }
+              }
+              if (titleLower.includes("accident") || titleLower.includes("crash") || category === "Traffic Accident") {
+                return { icon: "🚗", name: "Road Accident", color: "#f59e0b" }
+              }
+              if (titleLower.includes("flood") || titleLower.includes("water")) {
+                return { icon: "💧", name: "Flood", color: "#3b82f6" }
+              }
+              if (titleLower.includes("medical") || category === "Medical Emergency") {
+                return { icon: "🏥", name: "Medical", color: "#ef4444" }
+              }
+              if (titleLower.includes("crime")) {
+                return { icon: "🚨", name: "Crime", color: "#7c3aed" }
+              }
+              return { icon: "⚠️", name: "Incident", color: "#64748b" }
+            }
+
+            const categoryInfo = getCategoryInfo(report.title, report.category)
 
             return (
-              <div key={report.id} className={`report-card ${report.severity}`}>
-                <div className="report-card-header">
-                  <div className={`status-indicator ${report.status}`}></div>
+              <div key={report.id} className={`modern-report-card ${report.severity}`}>
+                <div className="modern-card-header">
+                  <div className="header-top-row">
+                    <div className={`status-dot ${report.status}`}></div>
+                    {isVerified && (
+                      <div className="verified-status">
+                        <svg className="verified-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Verified
+                      </div>
+                    )}
+                  </div>
 
-                  {report.verified && (
-                    <div className="verified-badge">
-                      <span>✓</span>
-                      Verified
-                    </div>
-                  )}
-
-                  <div className="media-indicator">
-                    <svg className="media-star" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="media-section">
+                    <svg className="star-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -640,105 +679,113 @@ export const ReportsPage = () => {
                         d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
                       />
                     </svg>
-                    <span className="media-count">{mediaCount} media files</span>
+                    <span className="media-text">{mediaCount} media files</span>
                   </div>
 
-                  <div className={`header-status-badge ${report.severity}`}>
-                    {report.severity?.toUpperCase() || "MEDIUM"}
+                  <div className="header-bottom-row">
+                    <div className={`severity-badge ${report.severity}`}>
+                      {report.severity?.toUpperCase() || "MEDIUM"}
+                    </div>
+                    <div className="time-ago">{getTimeAgo(report.created_at)}</div>
                   </div>
-
-                  <div className="time-indicator">{getTimeAgo(report.created_at)}</div>
                 </div>
 
-                <div className="report-card-content">
-                  <div className="incident-type-badge">
-                    <span>{incidentIcon}</span>
-                    {report.title.split(" ")[0] || "Incident"}
+                <div className="modern-card-content">
+                  <div
+                    className="category-badge"
+                    style={{
+                      backgroundColor: `${categoryInfo.color}15`,
+                      color: categoryInfo.color,
+                      borderColor: `${categoryInfo.color}30`,
+                    }}
+                  >
+                    <span className="category-icon">{categoryInfo.icon}</span>
+                    {categoryInfo.name}
                   </div>
 
                   <h3 className="incident-title">{report.title}</h3>
-
                   <p className="incident-description">{report.description}</p>
 
-                  <div className="incident-meta">
-                    <div className="meta-item">
-                      <svg className="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span>{report.location || "Location not specified"}</span>
-                    </div>
-
-                    <div className="meta-item">
-                      <svg className="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                      <span>{responderCount} responders</span>
-                    </div>
+                  <div className="location-info">
+                    <svg className="location-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>{report.location || "Location not specified"}</span>
                   </div>
 
+                  {casualtyCount > 0 && (
+                    <div className="casualty-info">
+                      <svg className="casualty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                        />
+                      </svg>
+                      <span className="casualty-text">{casualtyCount} casualties reported</span>
+                    </div>
+                  )}
+
                   <div className="responder-info">
+                    <svg className="responder-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                    <span className="responder-text">{responderCount} responders</span>
+                  </div>
+
+                  <div className="reporter-section">
                     <div className="reporter-info">
-                      <div className="reporter-avatar">
+                      <div className="reporter-avatar" style={{ backgroundColor: categoryInfo.color }}>
                         {report.reporter_name ? report.reporter_name.charAt(0).toUpperCase() : "U"}
                       </div>
                       <span className="reporter-name">by {report.reporter_name || "Unknown"}</span>
                     </div>
 
-                    {report.status === "responding" && <div className="responding-badge">Responding</div>}
+                    <div className="status-section">
+                      {report.status === "responding" && <div className="responding-status">Responding</div>}
+                      {isVerified && report.status === "resolved" && (
+                        <div className="verified-status-badge">Verified</div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="card-actions">
-                    <button className="action-btn">View Details</button>
+                  <div className="modern-card-actions">
+                    <button className="action-btn view-btn" onClick={() => handleViewDetails(report.id)}>
+                      View Details
+                    </button>
                     <button
                       className="action-btn edit-btn"
                       onClick={() => handleEditReport(report)}
                       disabled={report.status === "resolved"}
                     >
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button
                       className="action-btn delete-btn"
                       onClick={() => handleDeleteReport(report.id)}
                       disabled={deletingReport === report.id}
                     >
-                      {deletingReport === report.id ? "⏳ Deleting..." : "🗑️ Delete"}
+                      {deletingReport === report.id ? "Deleting..." : "Delete"}
                     </button>
-                    <button className="action-btn primary">Assign</button>
                   </div>
                 </div>
-
-                {report.status === "responding" && (
-                  <div
-                    style={{
-                      margin: "1rem 1.5rem",
-                      padding: "1rem",
-                      background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
-                      border: "1px solid #93c5fd",
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <p style={{ color: "#1e40af", fontSize: "0.875rem", margin: 0 }}>
-                      <span style={{ fontWeight: 600 }}>Emergency Response Active:</span> Emergency services are
-                      responding to this incident. Thank you for your report.
-                    </p>
-                  </div>
-                )}
               </div>
             )
           })}

@@ -228,117 +228,138 @@
   border: 1px solid #e2e8f0;
 }
 
-.reports-list {
+.reports-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
-.report-card {
+@media (max-width: 768px) {
+  .reports-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.modern-report-card {
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f5f9;
   transition: all 0.3s ease;
   position: relative;
 }
 
-.report-card:hover {
+.modern-report-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* Updated report card styles to match reference design */
-.report-card-header {
+.modern-card-header {
   position: relative;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  min-height: 120px;
+  min-height: 140px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
-.report-card.critical .report-card-header {
+.modern-report-card.critical .modern-card-header {
   background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%);
 }
 
-.report-card.high .report-card-header {
+.modern-report-card.high .modern-card-header {
   background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
 }
 
-/* Status indicator dot in top left */
-.status-indicator {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
+.modern-report-card.medium .modern-card-header {
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+}
+
+.modern-report-card.low .modern-card-header {
+  background: linear-gradient(135deg, #d1fae5 0%, #dcfce7 100%);
+}
+
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.status-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: #3b82f6;
 }
 
-.status-indicator.pending {
+.status-dot.pending {
   background: #f59e0b;
 }
 
-.status-indicator.resolved {
+.status-dot.resolved {
   background: #10b981;
 }
 
-.status-indicator.rejected {
+.status-dot.rejected {
   background: #ef4444;
 }
 
-.status-indicator.responding {
+.status-dot.responding {
   background: #3b82f6;
 }
 
-/* Verified badge in top right */
-.verified-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: #d1fae5;
+.verified-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: rgba(16, 185, 129, 0.1);
   color: #065f46;
-  padding: 0.25rem 0.75rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid #10b981;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-/* Media files indicator with star icon */
-.media-indicator {
+.verified-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.media-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 1rem 0;
+  flex: 1;
 }
 
-.media-star {
-  width: 40px;
-  height: 40px;
+.star-icon {
+  width: 48px;
+  height: 48px;
   color: #64748b;
   margin-bottom: 0.5rem;
+  stroke-width: 1;
 }
 
-.media-count {
+.media-text {
   color: #64748b;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-/* Status badge at bottom of header */
-.header-status-badge {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
+.header-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.severity-badge {
   padding: 0.375rem 0.875rem;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -347,54 +368,51 @@
   letter-spacing: 0.05em;
 }
 
-.header-status-badge.critical {
+.severity-badge.critical {
   background: #dc2626;
   color: white;
 }
 
-.header-status-badge.high {
+.severity-badge.high {
   background: #f59e0b;
   color: white;
 }
 
-.header-status-badge.medium {
-  background: #3b82f6;
+.severity-badge.medium {
+  background: #eab308;
   color: white;
 }
 
-.header-status-badge.low {
+.severity-badge.low {
   background: #10b981;
   color: white;
 }
 
-/* Time indicator at bottom right */
-.time-indicator {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+.time-ago {
   color: #64748b;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-/* Content section styling */
-.report-card-content {
+.modern-card-content {
   padding: 1.5rem;
   background: white;
 }
 
-.incident-type-badge {
+.category-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.375rem 0.75rem;
+  padding: 0.375rem 0.875rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  border: 1px solid #fecaca;
+  border: 1px solid;
+}
+
+.category-icon {
+  font-size: 0.875rem;
 }
 
 .incident-title {
@@ -412,32 +430,46 @@
   margin-bottom: 1.5rem;
 }
 
-.incident-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.meta-item {
+.location-info,
+.casualty-info,
+.responder-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.75rem;
   color: #64748b;
   font-size: 0.875rem;
 }
 
-.meta-icon {
+.location-icon,
+.casualty-icon,
+.responder-icon {
   width: 16px;
   height: 16px;
   color: #9ca3af;
+  flex-shrink: 0;
 }
 
-.responder-info {
+.casualty-info {
+  color: #dc2626;
+}
+
+.casualty-text {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.responder-text {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.reporter-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-top: 1rem;
+  margin-top: 1rem;
   border-top: 1px solid #f1f5f9;
 }
 
@@ -451,7 +483,6 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #f59e0b;
   color: white;
   display: flex;
   align-items: center;
@@ -466,7 +497,12 @@
   font-weight: 500;
 }
 
-.responding-badge {
+.status-section {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.responding-status {
   background: #dbeafe;
   color: #1e40af;
   padding: 0.25rem 0.75rem;
@@ -476,54 +512,61 @@
   border: 1px solid #93c5fd;
 }
 
-/* Action buttons styling */
-.card-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
+.verified-status-badge {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #10b981;
 }
 
-.action-btn {
+.modern-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.modern-card-actions .action-btn {
   flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
+  padding: 0.625rem 1rem;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: white;
   color: #374151;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.action-btn:hover {
+.modern-card-actions .action-btn:hover {
   background: #f9fafb;
-  border-color: #9ca3af;
+  border-color: #d1d5db;
 }
 
-.action-btn.primary {
-  background: #3b82f6;
-  color: white;
+.modern-card-actions .view-btn {
+  color: #3b82f6;
   border-color: #3b82f6;
 }
 
-.action-btn.primary:hover {
-  background: #2563eb;
+.modern-card-actions .view-btn:hover {
+  background: #eff6ff;
   border-color: #2563eb;
 }
 
-/* Added styles for edit and delete buttons */
-.action-btn.edit-btn {
+.modern-card-actions .edit-btn {
   color: #059669;
   border-color: #059669;
 }
 
-.action-btn.edit-btn:hover {
+.modern-card-actions .edit-btn:hover {
   background: #ecfdf5;
   border-color: #047857;
 }
 
-.action-btn.edit-btn:disabled {
+.modern-card-actions .edit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: #f9fafb;
@@ -531,17 +574,17 @@
   border-color: #d1d5db;
 }
 
-.action-btn.delete-btn {
+.modern-card-actions .delete-btn {
   color: #dc2626;
   border-color: #dc2626;
 }
 
-.action-btn.delete-btn:hover {
+.modern-card-actions .delete-btn:hover {
   background: #fef2f2;
   border-color: #b91c1c;
 }
 
-.action-btn.delete-btn:disabled {
+.modern-card-actions .delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background: #f9fafb;
