@@ -299,8 +299,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
 
   const fetchIncidentDetails = async () => {
     try {
-      console.log("[v0] Fetching incident details for ID:", incidentId)
-
       const [incidentRes, commentsRes] = await Promise.all([
         fetch(`${API_BASE}/incidents/${incidentId}`, {
           headers: {
@@ -314,26 +312,21 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
-          console.log("[v0] Comments fetch failed:", err)
           return { ok: false }
         }),
       ])
 
       if (incidentRes.ok) {
         const incidentData = await incidentRes.json()
-        console.log("[v0] Incident data received:", incidentData)
         setIncident(incidentData)
       } else {
-        console.log("[v0] Failed to fetch incident:", incidentRes.status)
         setError(`Failed to load incident (Status: ${incidentRes.status})`)
       }
 
       if (commentsRes.ok) {
         const commentsData = await commentsRes.json()
         setComments(commentsData)
-        console.log("[v0] Comments loaded:", commentsData.length)
       } else {
-        console.log("[v0] Comments not available, using empty array")
         setComments([])
       }
     } catch (error) {
@@ -347,7 +340,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
   const updateReportStatus = async (newStatus) => {
     setUpdating(true)
     try {
-      console.log("[v0] Updating report status:", incidentId, newStatus)
       const response = await fetch(`${API_BASE}/incidents/${incidentId}/status`, {
         method: "PATCH",
         headers: {
@@ -359,9 +351,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
 
       if (response.ok) {
         setIncident({ ...incident, status: newStatus })
-        console.log("[v0] Report status updated successfully")
       } else {
-        console.log("[v0] Failed to update report status, status:", response.status)
         alert("Failed to update report status. Please try again.")
       }
     } catch (error) {
@@ -378,7 +368,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
     }
 
     try {
-      console.log("[v0] Deleting report:", incidentId)
       const response = await fetch(`${API_BASE}/incidents/${incidentId}`, {
         method: "DELETE",
         headers: {
@@ -387,10 +376,8 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
       })
 
       if (response.ok) {
-        console.log("[v0] Report deleted successfully")
         onBack() // Navigate back to reports list
       } else {
-        console.log("[v0] Failed to delete report, status:", response.status)
         alert("Failed to delete report. Please try again.")
       }
     } catch (error) {
