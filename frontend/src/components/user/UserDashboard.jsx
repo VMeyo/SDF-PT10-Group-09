@@ -36,11 +36,14 @@ export const UserDashboard = () => {
   }
 
   const toggleMobileSidebar = () => {
+    console.log("[v0] Toggling mobile sidebar, current state:", isMobileSidebarOpen)
     setIsMobileSidebarOpen(!isMobileSidebarOpen)
   }
 
   const fetchUserData = async () => {
     try {
+      console.log("[v0] Fetching user data from /incidents/")
+
       const [incidentsRes, allIncidentsRes, pointsRes] = await Promise.all([
         fetch(`${API_BASE}/incidents/mine`, {
           headers: {
@@ -48,6 +51,7 @@ export const UserDashboard = () => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
+          console.log("[v0] /incidents/mine failed, will use fallback:", err)
           return { ok: false, status: 422 }
         }),
         fetch(`${API_BASE}/incidents/`, {
@@ -62,6 +66,7 @@ export const UserDashboard = () => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
+          console.log("[v0] /users/points failed:", err)
           return { ok: false }
         }),
       ])
@@ -69,13 +74,16 @@ export const UserDashboard = () => {
       if (incidentsRes.ok) {
         const incidentsData = await incidentsRes.json()
         setIncidents(incidentsData)
+        console.log("[v0] Successfully fetched user incidents:", incidentsData.length)
       } else {
+        console.log("[v0] /incidents/mine failed with status:", incidentsRes.status, "using empty array")
         setIncidents([])
       }
 
       let allIncidents = []
       if (allIncidentsRes.ok) {
         allIncidents = await allIncidentsRes.json()
+        console.log("[v0] Fetched all incidents:", allIncidents.length)
       } else {
         console.log("[v0] Failed to fetch all incidents, using empty array")
       }
@@ -83,6 +91,7 @@ export const UserDashboard = () => {
       if (pointsRes.ok) {
         const pointsData = await pointsRes.json()
         setUserStats(pointsData)
+        console.log("[v0] Successfully fetched user points")
       } else {
         console.log("[v0] Failed to fetch user points, using defaults")
       }
@@ -107,15 +116,18 @@ export const UserDashboard = () => {
           if (profileRes.ok) {
             const profileData = await profileRes.json()
             setUserData(profileData)
+            console.log("[v0] Successfully fetched user profile")
           } else {
+            console.log("[v0] Profile fetch failed with status:", profileRes.status)
             setUserData(user)
           }
         } catch (profileError) {
+          console.log("[v0] Profile fetch error:", profileError)
           setUserData(user)
         }
       }
     } catch (error) {
-      console.error("Error fetching user data:", error)
+      console.error("[v0] Error fetching user data:", error)
       setUserData(user)
       setIncidents([])
       setUserStats({ activeTab: 0, critical: 0, responders: 0, resolved: 0, allIncidents: [] })
@@ -195,6 +207,89 @@ export const UserDashboard = () => {
               <h1>Ajali</h1>
               <p>Emergency Response System</p>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Last updated: Just now</p>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-1">
+            {userTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center px-3 py-3 text-left rounded-lg transition-all duration-200 ${
+                  activeTab === tab.id ? "bg-red-500 text-white shadow-sm" : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span className="mr-3">{tab.icon}</span>
+                <div>
+                  <span className="font-medium text-sm">{tab.label}</span>
+                  <span className={`text-xs block ${activeTab === tab.id ? "text-red-100" : "text-gray-500"}`}>
+                    {tab.description}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+            <button
+              onClick={() => setActiveTab("report")}
+              className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm"
+            >
+              + Report Accident
+            </button>
+            <button
+              onClick={() => setActiveTab("map")}
+              className="w-full mt-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+            >
+              <span className="mr-2">👁️</span>
+              View Map
+            </button>
+          </div>
+
+          <div className="p-4 border-t border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Emergency Contacts</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-red-500">📞</span>
+                  <span className="text-sm text-gray-700">Emergency Services</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900">911</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-red-500">🚒</span>
+                  <span className="text-sm text-gray-700">Fire Department</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900">911</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {userData?.name ? userData.name.charAt(0).toUpperCase() : user?.name?.charAt(0).toUpperCase() || "A"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {userData?.email || user?.email || "admin@koci358.com"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {userData?.role === "admin" || user?.role === "admin" ? "Emergency Admin" : "Citizen Reporter"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="w-full text-left flex items-center text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-2">🚪</span>
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
 
@@ -414,137 +509,46 @@ export const UserDashboard = () => {
                     <div className="dashboard-recent-reports-content">
                       {userStats?.allIncidents && userStats.allIncidents.length > 0 ? (
                         <div className="dashboard-reports-grid">
-                          {userStats.allIncidents.slice(0, 3).map((report) => {
-                            const mediaCount =
-                              report.media_count || report.media?.length || Math.floor(Math.random() * 5) + 1
-                            const getGradientClass = (severity) => {
-                              switch (severity) {
-                                case "critical":
-                                  return "gradient-critical"
-                                case "high":
-                                  return "gradient-high"
-                                case "medium":
-                                  return "gradient-medium"
-                                case "low":
-                                  return "gradient-low"
-                                default:
-                                  return "gradient-medium"
-                              }
-                            }
-
-                            const getCategoryIcon = (category) => {
-                              switch (category?.toLowerCase()) {
-                                case "traffic accident":
-                                case "road accident":
-                                  return "🚗"
-                                case "fire emergency":
-                                case "fire":
-                                  return "🔥"
-                                case "medical emergency":
-                                  return "🚑"
-                                case "flood":
-                                  return "🌊"
-                                case "crime":
-                                  return "🚨"
-                                case "natural disaster":
-                                  return "🌪️"
-                                case "infrastructure":
-                                  return "🏗️"
-                                default:
-                                  return "⚠️"
-                              }
-                            }
-
-                            const getTimeAgo = (dateString) => {
-                              const now = new Date()
-                              const reportDate = new Date(dateString)
-                              const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
-
-                              if (diffInMinutes < 60) {
-                                return `${diffInMinutes}m ago`
-                              } else if (diffInMinutes < 1440) {
-                                return `${Math.floor(diffInMinutes / 60)}h ago`
-                              } else {
-                                return `${Math.floor(diffInMinutes / 1440)}d ago`
-                              }
-                            }
-
-                            return (
-                              <div key={report.id} className="modern-report-card">
-                                <div className={`modern-card-header ${getGradientClass(report.severity)}`}>
-                                  <div className="header-top">
-                                    <div className="status-indicator">
-                                      <div className={`status-dot ${report.severity || "medium"}`}></div>
-                                      {report.verified && (
-                                        <div className="verified-badge">
-                                          <span className="verified-icon">✓</span>
-                                          <span className="verified-text">Verified</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="header-center">
-                                      <div className="star-icon">⭐</div>
-                                      <div className="media-count-text">{mediaCount} media files</div>
-                                    </div>
-                                  </div>
-                                  <div className="header-bottom">
-                                    <div className={`severity-badge ${report.severity || "medium"}`}>
-                                      {(report.severity || "medium").toUpperCase()}
-                                    </div>
-                                    <div className="time-ago">{getTimeAgo(report.created_at)}</div>
-                                  </div>
-                                </div>
-
-                                <div className="modern-card-content">
-                                  <div className="category-section">
-                                    <div className="category-badge">
-                                      <span className="category-icon">
-                                        {getCategoryIcon(report.incident_type || report.category)}
-                                      </span>
-                                      <span className="category-text">
-                                        {report.incident_type || report.category || "Other"}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <h3 className="incident-title">{report.title}</h3>
-                                  <p className="incident-description">{report.description}</p>
-
-                                  <div className="location-section">
-                                    <span className="location-icon">📍</span>
-                                    <span className="location-text">{report.location}</span>
-                                  </div>
-
-                                  <div className="stats-section">
-                                    {report.casualty_count > 0 && (
-                                      <div className="stat-item casualties">
-                                        <span className="stat-icon">👥</span>
-                                        <span className="stat-text">{report.casualty_count} casualties reported</span>
-                                      </div>
-                                    )}
-                                    <div className="stat-item responders">
-                                      <span className="stat-icon">👥</span>
-                                      <span className="stat-text">{report.responder_count || 0} responders</span>
-                                    </div>
-                                  </div>
-
-                                  <div className="reporter-section">
-                                    <div className="reporter-avatar">
-                                      <span className="avatar-text">
-                                        {(report.reporter_name || report.user?.name || "U").charAt(0).toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <span className="reporter-name">
-                                      by {report.reporter_name || report.user?.name || "Unknown Reporter"}
-                                    </span>
-                                    <div className={`status-badge-small ${report.status || "pending"}`}>
-                                      {report.status === "resolved" ? "Verified" : "Responding"}
-                                    </div>
-                                  </div>
-                                </div>
+                          {userStats.allIncidents.slice(0, 3).map((report) => (
+                            <div key={report.id} className="dashboard-report-card">
+                              <div className="dashboard-report-card-header">
+                                <span
+                                  className={`dashboard-report-card-severity ${
+                                    report.severity === "critical"
+                                      ? "critical"
+                                      : report.severity === "high"
+                                        ? "high"
+                                        : "medium"
+                                  }`}
+                                >
+                                  {report.severity?.toUpperCase() || "MEDIUM"}
+                                </span>
+                                <span className="dashboard-report-card-date">
+                                  {new Date(report.created_at).toLocaleDateString()}
+                                </span>
                               </div>
-                            )
-                          })}
+                              <h3 className="dashboard-report-card-title">{report.title}</h3>
+                              <p className="dashboard-report-card-location">{report.location}</p>
+                              <div className="dashboard-report-card-reporter">
+                                <span className="reporter-icon">👤</span>
+                                <span>by {report.reporter_name || report.user?.name || "Unknown Reporter"}</span>
+                              </div>
+                              <div className="dashboard-report-card-footer">
+                                <span className="dashboard-report-card-type">{report.incident_type}</span>
+                                <span
+                                  className={`dashboard-report-card-status ${
+                                    report.status === "resolved"
+                                      ? "resolved"
+                                      : report.status === "in-progress"
+                                        ? "in-progress"
+                                        : "pending"
+                                  }`}
+                                >
+                                  {report.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="dashboard-empty-state">

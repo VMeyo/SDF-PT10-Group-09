@@ -143,58 +143,6 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
     }
   }
 
-  const getGradientClass = (severity) => {
-    switch (severity) {
-      case "critical":
-        return "gradient-critical"
-      case "high":
-        return "gradient-high"
-      case "medium":
-        return "gradient-medium"
-      case "low":
-        return "gradient-low"
-      default:
-        return "gradient-medium"
-    }
-  }
-
-  const getCategoryIcon = (category) => {
-    switch (category?.toLowerCase()) {
-      case "traffic accident":
-      case "road accident":
-        return "🚗"
-      case "fire emergency":
-      case "fire":
-        return "🔥"
-      case "medical emergency":
-        return "🚑"
-      case "flood":
-        return "🌊"
-      case "crime":
-        return "🚨"
-      case "natural disaster":
-        return "🌪️"
-      case "infrastructure":
-        return "🏗️"
-      default:
-        return "⚠️"
-    }
-  }
-
-  const getTimeAgo = (dateString) => {
-    const now = new Date()
-    const reportDate = new Date(dateString)
-    const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
-
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`
-    } else if (diffInMinutes < 1440) {
-      return `${Math.floor(diffInMinutes / 60)}h ago`
-    } else {
-      return `${Math.floor(diffInMinutes / 1440)}d ago`
-    }
-  }
-
   if (incidents.length === 0) {
     return (
       <Card>
@@ -219,123 +167,88 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
         </p>
       </div>
 
-      <div className="dashboard-reports-grid">
-        {filteredIncidents.map((incident) => {
-          const mediaCount = incident.media_count || incident.media?.length || 0
-
-          return (
-            <div key={incident.id} className="modern-report-card">
-              <div className={`modern-card-header ${getGradientClass(incident.severity)}`}>
-                <div className="header-top">
-                  <div className="status-indicator">
-                    <div className={`status-dot ${incident.severity || "medium"}`}></div>
-                    {incident.verified && (
-                      <div className="verified-badge">
-                        <span className="verified-icon">✓</span>
-                        <span className="verified-text">Verified</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="header-center">
-                    <div className="star-icon">⭐</div>
-                    <div className="media-count-text">{mediaCount} media files</div>
-                  </div>
+      <div className="incident-list-container">
+        {filteredIncidents.map((incident) => (
+          <div key={incident.id} className="incident-card">
+            {/* Incident Header */}
+            <div className="incident-header">
+              <div className="incident-title-section">
+                <div className="incident-badges">
+                  <h3 className="incident-title">{incident.title}</h3>
+                  <span className={`status-badge ${getStatusColor(incident.status)}`}>
+                    {incident.status === "reported"
+                      ? "reported"
+                      : incident.status === "under_investigation"
+                        ? "under investigation"
+                        : incident.status?.replace("_", " ") || "unknown"}
+                  </span>
+                  <span className={`severity-badge ${getSeverityColor(incident.severity)}`}>
+                    {incident.severity || "medium"}
+                  </span>
+                  {incident.verified && <span className="verified-badge">Verified</span>}
                 </div>
-                <div className="header-bottom">
-                  <div className={`severity-badge ${incident.severity || "medium"}`}>
-                    {(incident.severity || "medium").toUpperCase()}
-                  </div>
-                  <div className="time-ago">{getTimeAgo(incident.created_at)}</div>
-                </div>
-              </div>
-
-              <div className="modern-card-content">
-                <div className="category-section">
-                  <div className="category-badge">
-                    <span className="category-icon">
-                      {getCategoryIcon(incident.incident_type || incident.category)}
-                    </span>
-                    <span className="category-text">{incident.incident_type || incident.category || "Other"}</span>
-                  </div>
-                </div>
-
-                <h3 className="incident-title">{incident.title}</h3>
                 <p className="incident-description">{incident.description}</p>
-
-                <div className="location-section">
-                  <span className="location-icon">📍</span>
-                  <span className="location-text">{incident.location}</span>
-                </div>
-
-                <div className="stats-section">
-                  {incident.casualty_count > 0 && (
-                    <div className="stat-item casualties">
-                      <span className="stat-icon">👥</span>
-                      <span className="stat-text">{incident.casualty_count} casualties reported</span>
-                    </div>
-                  )}
-                  <div className="stat-item responders">
-                    <span className="stat-icon">👥</span>
-                    <span className="stat-text">{incident.responder_count || 0} responders</span>
-                  </div>
-                </div>
-
-                <div className="reporter-section">
-                  <div className="reporter-avatar">
-                    <span className="avatar-text">
-                      {(incident.reporter_name || incident.user?.name || "U").charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="reporter-name">by {incident.reporter_name || incident.user?.name || "You"}</span>
-                  <div className={`status-badge-small ${incident.status || "pending"}`}>
-                    {incident.status === "resolved" ? "Verified" : "Responding"}
-                  </div>
-                </div>
-
-                <div
-                  className="incident-actions"
-                  style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}
-                >
-                  <div
-                    className="action-buttons"
-                    style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onViewDetail?.(incident.id)}
-                      className="view-button"
-                    >
-                      <span className="mr-1">👁️</span>
-                      View Details
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditIncident(incident)}
-                      className="edit-button"
-                      disabled={incident.status === "resolved"}
-                    >
-                      <span className="mr-1">✏️</span>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteIncident(incident.id)}
-                      className="delete-button"
-                      disabled={deletingIncident === incident.id}
-                      style={{ color: "#dc2626", borderColor: "#fecaca" }}
-                    >
-                      <span className="mr-1">{deletingIncident === incident.id ? "⏳" : "🗑️"}</span>
-                      {deletingIncident === incident.id ? "Deleting..." : "Delete"}
-                    </Button>
-                  </div>
-                </div>
               </div>
             </div>
-          )
-        })}
+
+            {/* Incident Details */}
+            <div className="incident-details">
+              <div className="incident-detail-item">
+                <span>📍</span>
+                <span>{incident.location}</span>
+              </div>
+              <div className="incident-detail-item">
+                <span>🕒</span>
+                <span>
+                  {new Date(incident.created_at).toLocaleDateString()},{" "}
+                  {new Date(incident.created_at).toLocaleTimeString()}
+                </span>
+              </div>
+              <div>
+                <span>by {incident.reporter_name || incident.user?.name || "You"}</span>
+              </div>
+              <div>
+                <span>{incident.media_count || incident.media?.length || 0} media files</span>
+              </div>
+            </div>
+
+            {/* Actions - Only View for users */}
+            <div className="incident-actions">
+              <div className="incident-status-info">
+                <span className="status-text">
+                  Status: <span className="status-value">{incident.status?.replace("_", " ") || "Unknown"}</span>
+                </span>
+              </div>
+
+              <div className="action-buttons">
+                <Button variant="outline" size="sm" onClick={() => onViewDetail?.(incident.id)} className="view-button">
+                  <span className="mr-1">👁️</span>
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditIncident(incident)}
+                  className="edit-button"
+                  disabled={incident.status === "resolved"}
+                >
+                  <span className="mr-1">✏️</span>
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteIncident(incident.id)}
+                  className="delete-button"
+                  disabled={deletingIncident === incident.id}
+                >
+                  <span className="mr-1">{deletingIncident === incident.id ? "⏳" : "🗑️"}</span>
+                  {deletingIncident === incident.id ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {editingIncident && (

@@ -119,7 +119,7 @@ export const EmergencyDashboard = () => {
   }
 
   const handleViewDetails = (incident) => {
-    setSelectedIncident(incident.id)
+    setSelectedIncident(incident)
   }
 
   const handleBackFromDetail = () => {
@@ -128,7 +128,7 @@ export const EmergencyDashboard = () => {
   }
 
   if (selectedIncident) {
-    return <IncidentDetailPage incidentId={selectedIncident} onBack={handleBackFromDetail} isAdmin={true} />
+    return <IncidentDetailPage incident={selectedIncident} onBack={handleBackFromDetail} isAdmin={true} />
   }
 
   if (loading) {
@@ -311,34 +311,6 @@ export const EmergencyDashboard = () => {
 
                   <h3 className="incident-title">{report.title}</h3>
                   <p className="incident-description">{report.description}</p>
-
-                  {report.media && report.media.length > 0 && (
-                    <div className="media-preview">
-                      <div className="media-grid">
-                        {report.media.slice(0, 3).map((media, index) => (
-                          <div key={index} className="media-item">
-                            {media.file_url && media.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                              <img
-                                src={media.file_url || "/placeholder.svg"}
-                                alt={`Evidence ${index + 1}`}
-                                className="media-thumbnail"
-                                onError={(e) => {
-                                  e.target.style.display = "none"
-                                }}
-                              />
-                            ) : media.file_url && media.file_url.match(/\.(mp4|mov|avi)$/i) ? (
-                              <video src={media.file_url} className="media-thumbnail" controls={false} muted />
-                            ) : (
-                              <div className="media-placeholder">
-                                <span>📎</span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {report.media.length > 3 && <div className="media-more">+{report.media.length - 3} more</div>}
-                      </div>
-                    </div>
-                  )}
 
                   <div className="incident-meta">
                     <div className="meta-item">
