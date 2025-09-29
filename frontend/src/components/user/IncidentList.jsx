@@ -6,11 +6,7 @@ import { Button } from "../ui/Button"
 import { IncidentFilters } from "../incidents/IncidentFilters"
 import "./IncidentList.css"
 
-<<<<<<< HEAD
-export const IncidentList = ({ incidents, onViewDetail }) => {
-=======
 export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onIncidentDeleted }) => {
->>>>>>> feature/frontend-ui
   const [filters, setFilters] = useState({})
   const [filteredIncidents, setFilteredIncidents] = useState(incidents)
   const [editingIncident, setEditingIncident] = useState(null)
@@ -224,26 +220,6 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
                 </span>
               </div>
 
-<<<<<<< HEAD
-              <p className="text-muted-foreground mb-4 line-clamp-3">{incident.description}</p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-muted-foreground">
-                    Category: <span className="font-medium">{incident.category}</span>
-                  </span>
-                  {incident.comments_count > 0 && (
-                    <span className="text-sm text-muted-foreground">💬 {incident.comments_count} comments</span>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">ID: #{incident.id}</span>
-                  <Button variant="outline" size="sm" onClick={() => onViewDetail?.(incident.id)}>
-                    View Details
-                  </Button>
-                </div>
-=======
               <div className="action-buttons">
                 <Button variant="outline" size="sm" onClick={() => onViewDetail?.(incident.id)} className="view-button">
                   <span className="mr-1">👁️</span>
@@ -269,17 +245,11 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
                   <span className="mr-1">{deletingIncident === incident.id ? "⏳" : "🗑️"}</span>
                   {deletingIncident === incident.id ? "Deleting..." : "Delete"}
                 </Button>
->>>>>>> feature/frontend-ui
               </div>
             </div>
           </div>
         ))}
       </div>
-<<<<<<< HEAD
-    </div>
-  )
-}
-=======
 
       {editingIncident && (
         <EditIncidentModal
@@ -430,4 +400,3 @@ const EditIncidentModalComponent = ({ incident, onSave, onCancel }) => {
 }
 
 const EditIncidentModal = EditIncidentModalComponent
->>>>>>> feature/frontend-ui
