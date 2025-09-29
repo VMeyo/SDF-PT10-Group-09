@@ -15,21 +15,9 @@ const IncidentMap = ({ incident }) => {
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   useEffect(() => {
-<<<<<<< HEAD
-    console.log("[v0] IncidentMap - Starting map initialization")
-    console.log("[v0] API Key available:", !!GOOGLE_MAPS_API_KEY)
-    console.log("[v0] Incident data:", incident)
-
-    if (incident && incident.latitude && incident.longitude) {
-      console.log("[v0] Coordinates found:", incident.latitude, incident.longitude)
-      loadGoogleMapsScript()
-    } else {
-      console.log("[v0] Missing coordinates - latitude:", incident?.latitude, "longitude:", incident?.longitude)
-=======
     if (incident && incident.latitude && incident.longitude) {
       loadGoogleMapsScript()
     } else {
->>>>>>> feature/frontend-ui
       setLoading(false)
       setError("Location coordinates not available")
     }
@@ -37,53 +25,28 @@ const IncidentMap = ({ incident }) => {
 
   const loadGoogleMapsScript = () => {
     if (!GOOGLE_MAPS_API_KEY) {
-<<<<<<< HEAD
-      console.log("[v0] Google Maps API key is missing")
-=======
->>>>>>> feature/frontend-ui
       setError("Google Maps API key is missing")
       setLoading(false)
       return
     }
 
     if (window.google && window.google.maps) {
-<<<<<<< HEAD
-      console.log("[v0] Google Maps already loaded, initializing map")
-=======
->>>>>>> feature/frontend-ui
       initializeMap()
       return
     }
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
     if (existingScript) {
-<<<<<<< HEAD
-      console.log("[v0] Google Maps script already exists, waiting for load")
-=======
->>>>>>> feature/frontend-ui
       existingScript.addEventListener("load", initializeMap)
       return
     }
 
-<<<<<<< HEAD
-    console.log("[v0] Loading Google Maps script")
-=======
->>>>>>> feature/frontend-ui
     const script = document.createElement("script")
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`
     script.async = true
     script.defer = true
-<<<<<<< HEAD
-    script.onload = () => {
-      console.log("[v0] Google Maps script loaded successfully")
-      initializeMap()
-    }
-    script.onerror = (error) => {
-      console.error("[v0] Failed to load Google Maps script:", error)
-=======
     script.onload = initializeMap
     script.onerror = () => {
->>>>>>> feature/frontend-ui
       setError("Failed to load Google Maps - Please check your internet connection")
       setLoading(false)
     }
@@ -91,41 +54,17 @@ const IncidentMap = ({ incident }) => {
   }
 
   const initializeMap = () => {
-<<<<<<< HEAD
-    console.log("[v0] Initializing map...")
-
-    if (!mapRef.current) {
-      console.error("[v0] Map container ref not available")
-=======
     if (!mapRef.current || !window.google || !window.google.maps) {
->>>>>>> feature/frontend-ui
       setError("Map container not ready")
       setLoading(false)
       return
     }
 
-<<<<<<< HEAD
-    if (!window.google || !window.google.maps) {
-      console.error("[v0] Google Maps API not available")
-      setError("Google Maps API not loaded")
-      setLoading(false)
-      return
-    }
-
-=======
->>>>>>> feature/frontend-ui
     try {
       const lat = Number.parseFloat(incident.latitude)
       const lng = Number.parseFloat(incident.longitude)
 
-<<<<<<< HEAD
-      console.log("[v0] Parsed coordinates:", { lat, lng })
-
       if (isNaN(lat) || isNaN(lng)) {
-        console.error("[v0] Invalid coordinates:", incident.latitude, incident.longitude)
-=======
-      if (isNaN(lat) || isNaN(lng)) {
->>>>>>> feature/frontend-ui
         setError("Invalid location coordinates")
         setLoading(false)
         return
@@ -144,10 +83,6 @@ const IncidentMap = ({ incident }) => {
         ],
       }
 
-<<<<<<< HEAD
-      console.log("[v0] Creating Google Map with options:", mapOptions)
-=======
->>>>>>> feature/frontend-ui
       const googleMap = new window.google.maps.Map(mapRef.current, mapOptions)
 
       // Add marker for the incident
@@ -181,17 +116,9 @@ const IncidentMap = ({ incident }) => {
         infoWindow.open(googleMap, marker)
       })
 
-<<<<<<< HEAD
-      console.log("[v0] Map initialized successfully")
       setMap(googleMap)
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Map initialization error:", error)
-=======
-      setMap(googleMap)
-      setLoading(false)
-    } catch (error) {
->>>>>>> feature/frontend-ui
       setError(`Failed to initialize map: ${error.message}`)
       setLoading(false)
     }
@@ -429,20 +356,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
   }
 
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={onBack} size="sm">
-              ← Back to Reports
-            </Button>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Alerts</div>
-            <div className="bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">6</div>
-=======
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
@@ -465,35 +378,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm">
               6
             </div>
->>>>>>> feature/frontend-ui
           </div>
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-gray-800 to-gray-600 text-white">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative px-6 py-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {incident.category || "Uncategorized"}
-                </span>
-                <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(incident.status)}`}>
-                  {incident.status ? incident.status.replace("_", " ").toUpperCase() : "UNKNOWN"}
-                </span>
-                {incident.verified && (
-                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-                    ✓ Verified
-                  </span>
-                )}
-              </div>
-              <div className="text-center">
-                <div className="text-6xl mb-2">⚠️</div>
-                <div className="text-sm opacity-75">
-=======
       <div className="relative bg-gradient-to-r from-gray-800 via-gray-700 to-gray-600 text-white">
         <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 to-purple-900/20"></div>
         <div className="relative px-4 lg:px-6 py-8 lg:py-12">
@@ -516,28 +404,16 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               <div className="text-center lg:text-right">
                 <div className="text-5xl lg:text-6xl mb-3">⚠️</div>
                 <div className="text-sm opacity-90 font-medium">
->>>>>>> feature/frontend-ui
                   {incident.media && incident.media.length > 0
                     ? `${incident.media.length} Media Files`
                     : "No Media Available"}
                 </div>
-<<<<<<< HEAD
-                <div className="text-xs opacity-60">
-=======
                 <div className="text-xs opacity-70 mt-1">
->>>>>>> feature/frontend-ui
                   {incident.media && incident.media.length === 0 ? "no photos or videos reported" : ""}
                 </div>
               </div>
             </div>
 
-<<<<<<< HEAD
-            <h1 className="text-4xl font-bold mb-4">{incident.title}</h1>
-
-            <div className="flex items-center space-x-6 text-sm opacity-90">
-              <div className="flex items-center space-x-1">
-                <span>📅</span>
-=======
             <h1
               className="text-3xl lg:text-4xl font-bold mb-6 leading-tight"
               style={{ fontFamily: "var(--font-heading)" }}
@@ -548,7 +424,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-3 sm:space-y-0 text-sm opacity-90">
               <div className="flex items-center space-x-2">
                 <span className="text-lg">📅</span>
->>>>>>> feature/frontend-ui
                 <span>
                   {new Date(incident.created_at).toLocaleDateString("en-US", {
                     weekday: "long",
@@ -563,32 +438,15 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   })}
                 </span>
               </div>
-<<<<<<< HEAD
-              <div className="flex items-center space-x-1">
-                <span>📍</span>
-                <span>{incident.location || "Location not specified"}</span>
-=======
               <div className="flex items-center space-x-2">
                 <span className="text-lg">📍</span>
                 <span className="truncate">{incident.location || "Location not specified"}</span>
->>>>>>> feature/frontend-ui
               </div>
             </div>
           </div>
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Incident Report */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Incident Report</CardTitle>
-=======
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Left Column - Main Content */}
@@ -598,48 +456,28 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                 <CardTitle className="text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                   Incident Report
                 </CardTitle>
->>>>>>> feature/frontend-ui
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Description */}
                 <div>
-<<<<<<< HEAD
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-gray-700 leading-relaxed">{incident.description}</p>
-=======
                   <h3 className="font-semibold text-gray-900 mb-3 text-lg">Description</h3>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <p className="text-gray-700 leading-relaxed">{incident.description}</p>
                   </div>
->>>>>>> feature/frontend-ui
                 </div>
 
                 {/* Location */}
                 <div>
-<<<<<<< HEAD
-                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                    <span className="mr-2">📍</span>
-                    Location
-                  </h3>
-
-=======
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                     <span className="mr-2 text-xl">📍</span>
                     Location
                   </h3>
->>>>>>> feature/frontend-ui
                   <IncidentMap incident={incident} />
                 </div>
               </CardContent>
             </Card>
 
             {/* Media Upload */}
-<<<<<<< HEAD
-            <MediaUpload incidentId={incident.id} onMediaUploaded={fetchIncidentDetails} />
-
-            {/* Comments Section */}
-            <CommentSection incidentId={incident.id} comments={comments} onCommentAdded={handleCommentAdded} />
-=======
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <MediaUpload incidentId={incident.id} onMediaUploaded={fetchIncidentDetails} />
             </div>
@@ -648,25 +486,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <CommentSection incidentId={incident.id} comments={comments} onCommentAdded={handleCommentAdded} />
             </div>
->>>>>>> feature/frontend-ui
           </div>
 
           {/* Right Column - Emergency Response & Details */}
           <div className="space-y-6">
-<<<<<<< HEAD
-            {/* Emergency Response */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Emergency Response</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button className="w-full bg-red-600 hover:bg-red-700 text-white">📞 Call Emergency Services</Button>
-                <Button variant="outline" className="w-full bg-transparent">
-                  📋 Report Update
-                </Button>
-                <Button variant="outline" className="w-full bg-transparent">
-                  ✓ Verify Report
-=======
             <Card className="shadow-sm border-red-200 rounded-xl bg-gradient-to-br from-red-50 to-red-100">
               <CardHeader className="pb-4">
                 <CardTitle className="text-red-700 flex items-center text-lg">
@@ -692,31 +515,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                 >
                   <span className="mr-2">✓</span>
                   Verify Report
->>>>>>> feature/frontend-ui
                 </Button>
               </CardContent>
             </Card>
 
-<<<<<<< HEAD
-            {/* Reported By */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Reported By</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    {incident.reporter_name ? incident.reporter_name.charAt(0).toUpperCase() : "A"}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{incident.reporter_name || "Anonymous"}</div>
-                    <div className="text-sm text-gray-500">Citizen Reporter</div>
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-gray-600">
-                  <div>
-                    Reported:{" "}
-=======
             <Card className="shadow-sm border-gray-200 rounded-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Reported By</CardTitle>
@@ -736,7 +538,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2 text-sm text-gray-600">
                   <div>
                     <span className="font-medium">Reported:</span>{" "}
->>>>>>> feature/frontend-ui
                     {new Date(incident.created_at).toLocaleDateString("en-US", {
                       weekday: "long",
                       year: "numeric",
@@ -749,35 +550,16 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                       minute: "2-digit",
                     })}
                   </div>
-<<<<<<< HEAD
-                  <div className="mt-1">Status: {incident.verified ? "Verified" : "Unverified"}</div>
-=======
                   <div>
                     <span className="font-medium">Status:</span>{" "}
                     <span className={incident.verified ? "text-green-600" : "text-orange-600"}>
                       {incident.verified ? "Verified" : "Unverified"}
                     </span>
                   </div>
->>>>>>> feature/frontend-ui
                 </div>
               </CardContent>
             </Card>
 
-<<<<<<< HEAD
-            {/* Incident Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Incident Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">0</div>
-                    <div className="text-sm text-gray-500">Casualties</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">0</div>
-=======
             <Card className="shadow-sm border-gray-200 rounded-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Incident Details</CardTitle>
@@ -790,22 +572,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <div className="text-3xl font-bold text-gray-900 mb-1">0</div>
->>>>>>> feature/frontend-ui
                     <div className="text-sm text-gray-500">Responders</div>
                   </div>
                 </div>
 
-<<<<<<< HEAD
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Media Files:</span>
-                    <span className="font-medium">{incident.media?.length || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Response Status:</span>
-                    <span
-                      className={`font-medium ${incident.status === "resolved" ? "text-green-600" : "text-yellow-600"}`}
-=======
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Media Files:</span>
@@ -819,16 +589,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                       className={`font-medium px-2 py-1 rounded-full text-xs ${
                         incident.status === "resolved" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                       }`}
->>>>>>> feature/frontend-ui
                     >
                       {incident.status ? incident.status.replace("_", " ") : "pending"}
                     </span>
                   </div>
-<<<<<<< HEAD
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Verification:</span>
-                    <span className={`font-medium ${incident.verified ? "text-green-600" : "text-gray-600"}`}>
-=======
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Verification:</span>
                     <span
@@ -836,7 +600,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                         incident.verified ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
                       }`}
                     >
->>>>>>> feature/frontend-ui
                       {incident.verified ? "Verified" : "Unverified"}
                     </span>
                   </div>
@@ -845,15 +608,9 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             </Card>
 
             {/* Admin Actions */}
-<<<<<<< HEAD
-            <Card>
-              <CardHeader>
-                <CardTitle>Admin Actions</CardTitle>
-=======
             <Card className="shadow-sm border-gray-200 rounded-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Admin Actions</CardTitle>
->>>>>>> feature/frontend-ui
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
