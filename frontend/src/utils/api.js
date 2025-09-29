@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
-=======
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sdf-pt10-group-09.onrender.com/api/v1"
->>>>>>> feature/frontend-ui
 
 console.log("[v0] API_BASE configured as:", API_BASE)
 
@@ -35,8 +31,6 @@ export const apiRequest = async (endpoint, options = {}) => {
     console.error("[v0] API request failed:", error)
     throw error
   }
-<<<<<<< HEAD
-=======
 }
 
 export const incidentAPI = {
@@ -150,5 +144,4 @@ export const mediaAPI = {
       body: formData,
     })
   },
->>>>>>> feature/frontend-ui
 }

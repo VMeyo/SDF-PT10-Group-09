@@ -1,40 +1,3 @@
-<<<<<<< HEAD
-/* Implementing modern design system with Space Grotesk and DM Sans fonts, green color palette, and contemporary styling */
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap");
-
-:root {
-  /* Design System Colors - Emergency Response Green Theme */
-  --background: #ffffff;
-  --foreground: #374151;
-  --card: #f0fdf4;
-  --card-foreground: #374151;
-  --popover: #ffffff;
-  --popover-foreground: #374151;
-  --primary: #15803d;
-  --primary-foreground: #ffffff;
-  --secondary: #84cc16;
-  --secondary-foreground: #374151;
-  --muted: #f0fdf4;
-  --muted-foreground: #4b5563;
-  --accent: #84cc16;
-  --accent-foreground: #374151;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #f9fafb;
-  --ring: #15803d;
-  --radius: 0.5rem;
-
-  /* Sidebar specific tokens */
-  --sidebar: #f0fdf4;
-  --sidebar-foreground: #374151;
-  --sidebar-primary: #15803d;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #84cc16;
-  --sidebar-accent-foreground: #374151;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #15803d;
-=======
 /* Updated design system to match auth page color palette and improve spacing */
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap");
 
@@ -76,7 +39,6 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
->>>>>>> feature/frontend-ui
 
   /* Typography */
   --font-heading: "Space Grotesk", system-ui, -apple-system, sans-serif;
@@ -106,11 +68,7 @@ h5,
 h6 {
   font-family: var(--font-heading);
   font-weight: 600;
-<<<<<<< HEAD
-  line-height: 1.2;
-=======
   line-height: 1.3;
->>>>>>> feature/frontend-ui
   letter-spacing: -0.025em;
 }
 
@@ -119,21 +77,14 @@ h6 {
   background: linear-gradient(135deg, var(--background) 0%, var(--muted) 100%);
 }
 
-<<<<<<< HEAD
-/* Modern Card Styling */
-=======
 /* Modern Card Styling with improved spacing */
->>>>>>> feature/frontend-ui
 .modern-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease-in-out;
-<<<<<<< HEAD
-=======
   padding: var(--spacing-lg);
->>>>>>> feature/frontend-ui
 }
 
 .modern-card:hover {
@@ -141,15 +92,6 @@ h6 {
   transform: translateY(-1px);
 }
 
-<<<<<<< HEAD
-/* Modern Button Styling */
-.btn-primary {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius);
-  padding: 0.75rem 1.5rem;
-=======
 /* Modern Button Styling with Ajali theme */
 .btn-primary {
   background: linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end));
@@ -157,7 +99,6 @@ h6 {
   border: none;
   border-radius: var(--radius);
   padding: var(--spacing-sm) var(--spacing-lg);
->>>>>>> feature/frontend-ui
   font-family: var(--font-body);
   font-weight: 500;
   font-size: 0.875rem;
@@ -166,15 +107,6 @@ h6 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-<<<<<<< HEAD
-  gap: 0.5rem;
-}
-
-.btn-primary:hover {
-  background-color: #166534;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-=======
   gap: var(--spacing-xs);
 }
 
@@ -182,21 +114,14 @@ h6 {
   opacity: 0.9;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
->>>>>>> feature/frontend-ui
 }
 
 .btn-secondary {
   background-color: var(--secondary);
   color: var(--secondary-foreground);
-<<<<<<< HEAD
-  border: 1px solid var(--secondary);
-  border-radius: var(--radius);
-  padding: 0.75rem 1.5rem;
-=======
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--spacing-sm) var(--spacing-lg);
->>>>>>> feature/frontend-ui
   font-family: var(--font-body);
   font-weight: 500;
   font-size: 0.875rem;
@@ -205,65 +130,44 @@ h6 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-<<<<<<< HEAD
-  gap: 0.5rem;
-}
-
-.btn-secondary:hover {
-  background-color: #65a30d;
-=======
   gap: var(--spacing-xs);
 }
 
 .btn-secondary:hover {
   background-color: var(--accent);
->>>>>>> feature/frontend-ui
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-<<<<<<< HEAD
-/* Status Indicators */
-=======
 /* Status Indicators with improved colors */
->>>>>>> feature/frontend-ui
 .status-active {
   background-color: #dcfce7;
   color: #166534;
   border: 1px solid #bbf7d0;
-<<<<<<< HEAD
-=======
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: calc(var(--radius) * 0.5);
   font-size: 0.75rem;
   font-weight: 500;
->>>>>>> feature/frontend-ui
 }
 
 .status-critical {
   background-color: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
-<<<<<<< HEAD
-=======
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: calc(var(--radius) * 0.5);
   font-size: 0.75rem;
   font-weight: 500;
->>>>>>> feature/frontend-ui
 }
 
 .status-warning {
   background-color: #fffbeb;
   color: #d97706;
   border: 1px solid #fed7aa;
-<<<<<<< HEAD
-=======
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: calc(var(--radius) * 0.5);
   font-size: 0.75rem;
   font-weight: 500;
->>>>>>> feature/frontend-ui
 }
 
 /* Modern Input Styling */
@@ -271,11 +175,7 @@ h6 {
   background-color: var(--input);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-<<<<<<< HEAD
-  padding: 0.75rem 1rem;
-=======
   padding: var(--spacing-sm) var(--spacing-md);
->>>>>>> feature/frontend-ui
   font-family: var(--font-body);
   font-size: 0.875rem;
   transition: all 0.2s ease-in-out;
@@ -285,18 +185,6 @@ h6 {
 .modern-input:focus {
   outline: none;
   border-color: var(--ring);
-<<<<<<< HEAD
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.1);
-}
-
-/* Gradient Backgrounds */
-.gradient-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #166534 100%);
-}
-
-.gradient-secondary {
-  background: linear-gradient(135deg, var(--secondary) 0%, #65a30d 100%);
-=======
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
@@ -337,7 +225,6 @@ h6 {
 
 .gradient-secondary {
   background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
->>>>>>> feature/frontend-ui
 }
 
 .gradient-muted {
@@ -375,9 +262,6 @@ h6 {
   }
 }
 
-<<<<<<< HEAD
-/* Responsive Design */
-=======
 /* Enhanced Mobile Responsiveness */
 @media (max-width: 640px) {
   :root {
@@ -410,7 +294,6 @@ h6 {
   }
 }
 
->>>>>>> feature/frontend-ui
 @media (max-width: 768px) {
   .btn-primary,
   .btn-secondary {
@@ -421,16 +304,6 @@ h6 {
   h1 {
     font-size: 1.875rem;
   }
-<<<<<<< HEAD
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  h3 {
-    font-size: 1.25rem;
-  }
-=======
   h2 {
     font-size: 1.5rem;
   }
@@ -455,5 +328,4 @@ h6 {
   .lg\:space-y-12 > * + * {
     margin-top: var(--spacing-2xl);
   }
->>>>>>> feature/frontend-ui
 }

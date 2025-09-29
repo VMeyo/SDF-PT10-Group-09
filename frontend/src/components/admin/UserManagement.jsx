@@ -81,24 +81,10 @@ export const UserManagement = () => {
   const updateUserRole = async (userId, newRole) => {
     setPromoting(userId)
     try {
-<<<<<<< HEAD
-      const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ role: newRole }),
-      })
-
-      if (response.ok) {
-        setUsers(users.map((user) => (user.id === userId ? { ...user, role: newRole } : user)))
-=======
       if (newRole === "admin") {
         await promoteUser(userId)
       } else {
         console.log("Role update not supported for non-admin roles")
->>>>>>> feature/frontend-ui
       }
     } catch (error) {
       console.error("Error updating user role:", error)
@@ -107,37 +93,11 @@ export const UserManagement = () => {
     }
   }
 
-<<<<<<< HEAD
-  const updateUserStatus = async (userId, newStatus) => {
-    try {
-      const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (response.ok) {
-        setUsers(users.map((user) => (user.id === userId ? { ...user, status: newStatus } : user)))
-      }
-    } catch (error) {
-      console.error("Error updating user status:", error)
-    }
-  }
-
-=======
->>>>>>> feature/frontend-ui
   const deleteUser = async (userId) => {
     if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return
 
     try {
-<<<<<<< HEAD
-      const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
-=======
       const response = await fetch(`${API_BASE}/users/${userId}`, {
->>>>>>> feature/frontend-ui
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -150,31 +110,6 @@ export const UserManagement = () => {
     }
   }
 
-<<<<<<< HEAD
-  const bulkUpdateUsers = async (action) => {
-    if (selectedUsers.length === 0) return
-
-    try {
-      const response = await fetch(`${API_BASE}/admin/users/bulk`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userIds: selectedUsers, action }),
-      })
-
-      if (response.ok) {
-        fetchUsers()
-        setSelectedUsers([])
-      }
-    } catch (error) {
-      console.error("Error performing bulk action:", error)
-    }
-  }
-
-=======
->>>>>>> feature/frontend-ui
   const getUserStatusColor = (status) => {
     switch (status) {
       case "active":
@@ -218,22 +153,6 @@ export const UserManagement = () => {
           <p className="text-muted-foreground">Manage users, roles, and permissions</p>
         </div>
         <div className="flex space-x-2">
-<<<<<<< HEAD
-          {selectedUsers.length > 0 && (
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateUsers("activate")}>
-                Activate Selected
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateUsers("suspend")}>
-                Suspend Selected
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => bulkUpdateUsers("delete")} className="text-red-600">
-                Delete Selected
-              </Button>
-            </div>
-          )}
-=======
->>>>>>> feature/frontend-ui
           <Button onClick={() => setShowUserModal(true)}>+ Add User</Button>
         </div>
       </div>
@@ -320,21 +239,6 @@ export const UserManagement = () => {
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex items-center space-x-4">
-<<<<<<< HEAD
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(user.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedUsers([...selectedUsers, user.id])
-                      } else {
-                        setSelectedUsers(selectedUsers.filter((id) => id !== user.id))
-                      }
-                    }}
-                    className="rounded"
-                  />
-=======
->>>>>>> feature/frontend-ui
                   <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-medium">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
@@ -345,14 +249,6 @@ export const UserManagement = () => {
                       <span className={`px-2 py-1 text-xs rounded-full border ${getRoleColor(user.role)}`}>
                         {user.role}
                       </span>
-<<<<<<< HEAD
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full border ${getUserStatusColor(user.status || "active")}`}
-                      >
-                        {user.status || "active"}
-                      </span>
-=======
->>>>>>> feature/frontend-ui
                     </div>
                   </div>
                 </div>
@@ -377,30 +273,6 @@ export const UserManagement = () => {
                     </Button>
 
                     {user.role !== "admin" && (
-<<<<<<< HEAD
-                      <select
-                        value={user.role}
-                        onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        disabled={promoting === user.id}
-                        className="px-2 py-1 text-xs border border-gray-300 rounded"
-                      >
-                        <option value="user">User</option>
-                        <option value="moderator">Moderator</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    )}
-
-                    <select
-                      value={user.status || "active"}
-                      onChange={(e) => updateUserStatus(user.id, e.target.value)}
-                      className="px-2 py-1 text-xs border border-gray-300 rounded"
-                    >
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-
-=======
                       <Button
                         variant="outline"
                         size="sm"
@@ -412,7 +284,6 @@ export const UserManagement = () => {
                       </Button>
                     )}
 
->>>>>>> feature/frontend-ui
                     <Button
                       variant="outline"
                       size="sm"
@@ -443,14 +314,6 @@ export const UserManagement = () => {
                 <option value="moderator">Moderator</option>
                 <option value="admin">Admin</option>
               </select>
-<<<<<<< HEAD
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="suspended">Suspended</option>
-              </select>
-=======
->>>>>>> feature/frontend-ui
             </div>
             <div className="flex justify-end space-x-2 mt-6">
               <Button

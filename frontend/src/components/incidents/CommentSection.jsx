@@ -11,11 +11,7 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
   const [error, setError] = useState("")
   const { user } = useAuth()
 
-<<<<<<< HEAD
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
-=======
   const API_BASE = import.meta.env.VITE_API_BASE_URL
->>>>>>> feature/frontend-ui
   const token = localStorage.getItem("token")
 
   const handleSubmitComment = async (e) => {
@@ -33,11 +29,7 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-<<<<<<< HEAD
-        body: JSON.stringify({ text: newComment }), // Flask expects 'text' not 'content'
-=======
         body: JSON.stringify({ text: newComment.trim() }),
->>>>>>> feature/frontend-ui
       })
 
       if (response.ok) {
@@ -48,13 +40,9 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
         // Show success feedback
         alert("Comment posted successfully!")
       } else {
-<<<<<<< HEAD
-        setError(data.msg || "Failed to add comment") // Flask uses 'msg' not 'message'
-=======
         const errorData = await response.json().catch(() => ({}))
         console.log("[v0] Comment post failed:", response.status, errorData)
         setError(errorData.msg || errorData.message || "Failed to add comment")
->>>>>>> feature/frontend-ui
       }
     } catch (error) {
       console.error("[v0] Network error posting comment:", error)
