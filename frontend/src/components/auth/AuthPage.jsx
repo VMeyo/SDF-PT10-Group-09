@@ -239,7 +239,9 @@ export const AuthPage = () => {
         {/* Left side - Main content */}
         <div>
           <div className="ajali-logo">
-            <div className="ajali-logo-icon">⚠</div>
+            <div className="ajali-logo-icon">
+              <img src="./ajali.svg" alt="ajali logo"/>
+            </div>
             <div className="ajali-logo-text">
               <h1>Ajali</h1>
               <p>Emergency Response System</p>

@@ -14,11 +14,15 @@ export const GoogleMapView = () => {
   const [loading, setLoading] = useState(true)
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false)
   const [error, setError] = useState(null)
+<<<<<<< HEAD
   const [debugInfo, setDebugInfo] = useState([])
+=======
+>>>>>>> feature/frontend-ui
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
+<<<<<<< HEAD
   const addDebugInfo = (message) => {
     console.log(`[v0] ${message}`)
     setDebugInfo((prev) => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
@@ -30,78 +34,113 @@ export const GoogleMapView = () => {
     addDebugInfo(`GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY ? "Present" : "Missing"}`)
     addDebugInfo(`Environment: ${import.meta.env.MODE || "Unknown"}`)
 
+=======
+  useEffect(() => {
+>>>>>>> feature/frontend-ui
     fetchActiveReports()
     loadGoogleMapsScript()
   }, [])
 
   useEffect(() => {
     if (googleMapsLoaded && mapRef.current && !map) {
+<<<<<<< HEAD
       addDebugInfo("Both Google Maps loaded and mapRef available, initializing map")
+=======
+>>>>>>> feature/frontend-ui
       initializeMapWithElement()
     }
   }, [googleMapsLoaded, map])
 
   const loadGoogleMapsScript = () => {
+<<<<<<< HEAD
     addDebugInfo("Starting Google Maps script loading process")
 
     if (!GOOGLE_MAPS_API_KEY) {
       const errorMsg = "Google Maps API key is missing. Please set VITE_GOOGLE_MAPS_API_KEY environment variable."
       addDebugInfo(`ERROR: ${errorMsg}`)
       setError(errorMsg)
+=======
+    if (!GOOGLE_MAPS_API_KEY) {
+      setError("Google Maps API key is missing. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.")
+>>>>>>> feature/frontend-ui
       setLoading(false)
       return
     }
 
     if (window.google && window.google.maps && window.google.maps.Map) {
+<<<<<<< HEAD
       addDebugInfo("Google Maps already loaded and ready")
+=======
+>>>>>>> feature/frontend-ui
       setGoogleMapsLoaded(true)
       return
     }
 
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
     if (existingScript) {
+<<<<<<< HEAD
       addDebugInfo("Google Maps script already exists, checking if loaded")
 
       if (window.google && window.google.maps) {
         addDebugInfo("Existing script already loaded")
+=======
+      if (window.google && window.google.maps) {
+>>>>>>> feature/frontend-ui
         setGoogleMapsLoaded(true)
         return
       }
 
       const scriptTimeout = setTimeout(() => {
+<<<<<<< HEAD
         addDebugInfo("ERROR: Existing script loading timeout")
+=======
+>>>>>>> feature/frontend-ui
         setError("Google Maps loading timeout. Please refresh the page.")
         setLoading(false)
       }, 10000)
 
       existingScript.addEventListener("load", () => {
         clearTimeout(scriptTimeout)
+<<<<<<< HEAD
         addDebugInfo("Existing Google Maps script loaded successfully")
         setGoogleMapsLoaded(true)
       })
       existingScript.addEventListener("error", (e) => {
         clearTimeout(scriptTimeout)
         addDebugInfo(`ERROR: Existing Google Maps script failed to load: ${e.message}`)
+=======
+        setGoogleMapsLoaded(true)
+      })
+      existingScript.addEventListener("error", () => {
+        clearTimeout(scriptTimeout)
+>>>>>>> feature/frontend-ui
         setError("Failed to load Google Maps. Please check your internet connection and API key.")
         setLoading(false)
       })
       return
     }
 
+<<<<<<< HEAD
     addDebugInfo(`Creating new Google Maps script with API key: ${GOOGLE_MAPS_API_KEY.substring(0, 10)}...`)
+=======
+>>>>>>> feature/frontend-ui
     const script = document.createElement("script")
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`
     script.async = true
     script.defer = true
 
     const newScriptTimeout = setTimeout(() => {
+<<<<<<< HEAD
       addDebugInfo("ERROR: New script loading timeout")
+=======
+>>>>>>> feature/frontend-ui
       setError("Google Maps loading timeout. Please check your API key and internet connection.")
       setLoading(false)
     }, 15000)
 
     script.onload = () => {
       clearTimeout(newScriptTimeout)
+<<<<<<< HEAD
       addDebugInfo("Google Maps script loaded successfully")
 
       const checkGoogleMapsReady = () => {
@@ -110,21 +149,33 @@ export const GoogleMapView = () => {
           setGoogleMapsLoaded(true)
         } else {
           addDebugInfo("Google Maps API not yet ready, retrying...")
+=======
+      const checkGoogleMapsReady = () => {
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          setGoogleMapsLoaded(true)
+        } else {
+>>>>>>> feature/frontend-ui
           setTimeout(checkGoogleMapsReady, 500)
         }
       }
       checkGoogleMapsReady()
     }
 
+<<<<<<< HEAD
     script.onerror = (e) => {
       clearTimeout(newScriptTimeout)
       addDebugInfo(`ERROR: Failed to load Google Maps script: ${e.message || "Unknown error"}`)
       addDebugInfo(`Script src: ${script.src}`)
+=======
+    script.onerror = () => {
+      clearTimeout(newScriptTimeout)
+>>>>>>> feature/frontend-ui
       setError("Failed to load Google Maps. Please check your API key and internet connection.")
       setLoading(false)
     }
 
     document.head.appendChild(script)
+<<<<<<< HEAD
     addDebugInfo("Google Maps script added to document head")
   }
 
@@ -143,11 +194,18 @@ export const GoogleMapView = () => {
 
     if (!window.google.maps) {
       addDebugInfo("ERROR: window.google.maps is not available")
+=======
+  }
+
+  const initializeMapWithElement = () => {
+    if (!mapRef.current || !window.google || !window.google.maps) {
+>>>>>>> feature/frontend-ui
       setError("Google Maps API not properly loaded. Please refresh the page.")
       setLoading(false)
       return
     }
 
+<<<<<<< HEAD
     addDebugInfo("All prerequisites met, creating Google Map instance")
     console.log("[v0] Creating Google Map instance")
     console.log("[v0] mapRef.current dimensions:", {
@@ -157,6 +215,8 @@ export const GoogleMapView = () => {
       clientHeight: mapRef.current.clientHeight,
     })
 
+=======
+>>>>>>> feature/frontend-ui
     try {
       const mapOptions = {
         center: { lat: -1.2921, lng: 36.8219 }, // Nairobi coordinates
@@ -171,6 +231,7 @@ export const GoogleMapView = () => {
         ],
       }
 
+<<<<<<< HEAD
       console.log("[v0] Map options:", mapOptions)
       const googleMap = new window.google.maps.Map(mapRef.current, mapOptions)
       console.log("[v0] Google Map created:", googleMap)
@@ -193,6 +254,18 @@ export const GoogleMapView = () => {
     } catch (error) {
       addDebugInfo(`ERROR: Failed to initialize Google Map: ${error.message}`)
       console.log("[v0] ERROR: Failed to initialize Google Map:", error)
+=======
+      const googleMap = new window.google.maps.Map(mapRef.current, mapOptions)
+      setMap(googleMap)
+      setLoading(false)
+
+      if (activeReports.length > 0) {
+        activeReports.forEach((report) => {
+          addMarkerToMap(googleMap, report)
+        })
+      }
+    } catch (error) {
+>>>>>>> feature/frontend-ui
       setError("Failed to initialize Google Maps. Please refresh the page.")
       setLoading(false)
     }
@@ -206,6 +279,7 @@ export const GoogleMapView = () => {
     const lng =
       Number.parseFloat(report.longitude) || Number.parseFloat(report.lng) || 36.8219 + (Math.random() - 0.5) * 0.1
 
+<<<<<<< HEAD
     console.log(`[v0] Adding marker for report ${report.id}:`, {
       lat,
       lng,
@@ -213,6 +287,8 @@ export const GoogleMapView = () => {
       originalLng: report.longitude,
     })
 
+=======
+>>>>>>> feature/frontend-ui
     const marker = new window.google.maps.Marker({
       position: { lat, lng },
       map: googleMap,
@@ -256,12 +332,18 @@ export const GoogleMapView = () => {
   }
 
   const fetchActiveReports = async () => {
+<<<<<<< HEAD
     addDebugInfo("Starting to fetch active reports")
+=======
+>>>>>>> feature/frontend-ui
     try {
       const token = localStorage.getItem("token")
       const apiBase = API_BASE || "/api/v1"
       const url = `${apiBase}/incidents/`
+<<<<<<< HEAD
       addDebugInfo(`Fetching from: ${url}`)
+=======
+>>>>>>> feature/frontend-ui
 
       const response = await fetch(url, {
         headers: {
@@ -270,6 +352,7 @@ export const GoogleMapView = () => {
         },
       })
 
+<<<<<<< HEAD
       addDebugInfo(`API response status: ${response.status}`)
 
       if (response.ok) {
@@ -295,6 +378,33 @@ export const GoogleMapView = () => {
         addDebugInfo(`Processed ${reports.length} active reports for map`)
       } else {
         addDebugInfo(`API failed with status ${response.status}, using mock data`)
+=======
+      if (response.ok) {
+        const data = await response.json()
+        const reports = data.map((incident) => ({
+          ...incident,
+          casualties: incident.casualties || Math.floor(Math.random() * 3),
+          responders: incident.responders || Math.floor(Math.random() * 5),
+          lat:
+            Number.parseFloat(incident.latitude) ||
+            Number.parseFloat(incident.lat) ||
+            -1.2921 + (Math.random() - 0.5) * 0.1,
+          lng:
+            Number.parseFloat(incident.longitude) ||
+            Number.parseFloat(incident.lng) ||
+            36.8219 + (Math.random() - 0.5) * 0.1,
+        }))
+
+        setActiveReports(reports)
+
+        if (map && reports.length > 0) {
+          reports.forEach((report) => {
+            addMarkerToMap(map, report)
+          })
+        }
+      } else {
+        // Fallback to mock data if API fails
+>>>>>>> feature/frontend-ui
         const mockReports = [
           {
             id: 1,
@@ -320,10 +430,15 @@ export const GoogleMapView = () => {
           },
         ]
         setActiveReports(mockReports)
+<<<<<<< HEAD
         addDebugInfo("Using mock reports data")
       }
     } catch (error) {
       addDebugInfo(`ERROR: Failed to fetch active reports: ${error.message}`)
+=======
+      }
+    } catch (error) {
+>>>>>>> feature/frontend-ui
       setActiveReports([])
     }
   }
@@ -348,6 +463,20 @@ export const GoogleMapView = () => {
     return colors[severity] || "bg-gray-500"
   }
 
+<<<<<<< HEAD
+=======
+  const refreshIncidents = async () => {
+    await fetchActiveReports()
+  }
+
+  useEffect(() => {
+    window.refreshMapIncidents = refreshIncidents
+    return () => {
+      delete window.refreshMapIncidents
+    }
+  }, [])
+
+>>>>>>> feature/frontend-ui
   return (
     <div className="space-y-6">
       <div className="flex space-x-6">
@@ -443,6 +572,7 @@ export const GoogleMapView = () => {
                       <div className="text-red-500 text-6xl mb-4">🗺️</div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Unavailable</h3>
                       <p className="text-gray-600 mb-4">{error}</p>
+<<<<<<< HEAD
 
                       <details className="mb-4 text-left">
                         <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
@@ -457,12 +587,17 @@ export const GoogleMapView = () => {
                         </div>
                       </details>
 
+=======
+>>>>>>> feature/frontend-ui
                       <button
                         onClick={() => {
                           setError(null)
                           setLoading(true)
+<<<<<<< HEAD
                           setDebugInfo([])
                           addDebugInfo("Retrying map initialization")
+=======
+>>>>>>> feature/frontend-ui
                           loadGoogleMapsScript()
                         }}
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -473,6 +608,7 @@ export const GoogleMapView = () => {
                   ) : (
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+<<<<<<< HEAD
                       <div className="text-gray-600">
                         Loading Google Maps...
                         <details className="mt-2 text-left max-w-md mx-auto">
@@ -488,6 +624,9 @@ export const GoogleMapView = () => {
                           </div>
                         </details>
                       </div>
+=======
+                      <div className="text-gray-600">Loading Google Maps...</div>
+>>>>>>> feature/frontend-ui
                     </div>
                   )}
                 </div>

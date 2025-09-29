@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
 import { IncidentFilters } from "../incidents/IncidentFilters"
-import { IncidentDetail } from "../incidents/IncidentDetail"
+import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
 
 export const AdminIncidents = ({ onStatsUpdate }) => {
   const [incidents, setIncidents] = useState([])
@@ -236,7 +236,9 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
         </Card>
       )}
 
-      {selectedIncident && <IncidentDetail incidentId={selectedIncident} onClose={() => setSelectedIncident(null)} />}
+      {selectedIncident && (
+        <IncidentDetailPage incidentId={selectedIncident} onBack={() => setSelectedIncident(null)} />
+      )}
     </div>
   )
 }

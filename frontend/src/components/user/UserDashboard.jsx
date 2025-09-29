@@ -7,6 +7,14 @@ import { IncidentList } from "./IncidentList"
 import { PointsSystem } from "../rewards/PointsSystem"
 import { MapView } from "../map/MapView"
 import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
+<<<<<<< HEAD
+=======
+import { ProfilePage } from "../profile/ProfilePage"
+import "./../../styles/dashboard.css"
+import "./../../styles/sidebar.css"
+import "./../../styles/user-dashboard.css"
+import "./../../styles/mobile-fixes.css"
+>>>>>>> feature/frontend-ui
 
 export const UserDashboard = () => {
   const { user, logout } = useAuth()
@@ -16,6 +24,10 @@ export const UserDashboard = () => {
   const [userStats, setUserStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [userData, setUserData] = useState(null)
+<<<<<<< HEAD
+=======
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+>>>>>>> feature/frontend-ui
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -23,6 +35,16 @@ export const UserDashboard = () => {
   useEffect(() => {
     fetchUserData()
   }, [])
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+    setIsMobileSidebarOpen(false) // Close mobile sidebar when tab changes
+  }
+
+  const toggleMobileSidebar = () => {
+    console.log("[v0] Toggling mobile sidebar, current state:", isMobileSidebarOpen)
+    setIsMobileSidebarOpen(!isMobileSidebarOpen)
+  }
 
   const fetchUserData = async () => {
     try {
@@ -91,7 +113,11 @@ export const UserDashboard = () => {
 
       if (token) {
         try {
+<<<<<<< HEAD
           const profileRes = await fetch(`${API_BASE}/auth/profile`, {
+=======
+          const profileRes = await fetch(`${API_BASE}/auth/me`, {
+>>>>>>> feature/frontend-ui
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
@@ -114,7 +140,11 @@ export const UserDashboard = () => {
       console.error("[v0] Error fetching user data:", error)
       setUserData(user)
       setIncidents([])
+<<<<<<< HEAD
       setUserStats({ activeReports: 0, critical: 0, responders: 0, resolved: 0, allIncidents: [] })
+=======
+      setUserStats({ activeTab: 0, critical: 0, responders: 0, resolved: 0, allIncidents: [] })
+>>>>>>> feature/frontend-ui
     } finally {
       setLoading(false)
     }
@@ -126,6 +156,19 @@ export const UserDashboard = () => {
     fetchUserData() // Refresh stats
   }
 
+<<<<<<< HEAD
+=======
+  const handleIncidentUpdated = (updatedIncident) => {
+    setIncidents(incidents.map((incident) => (incident.id === updatedIncident.id ? updatedIncident : incident)))
+    fetchUserData() // Refresh stats to reflect changes
+  }
+
+  const handleIncidentDeleted = (deletedIncidentId) => {
+    setIncidents(incidents.filter((incident) => incident.id !== deletedIncidentId))
+    fetchUserData() // Refresh stats to reflect changes
+  }
+
+>>>>>>> feature/frontend-ui
   const handleViewIncidentDetail = (incidentId) => {
     setSelectedIncidentId(incidentId)
     setActiveTab("incident-detail")
@@ -147,10 +190,15 @@ export const UserDashboard = () => {
       icon: "🏆",
       description: "Earn recognition for contributing to community safety",
     },
+<<<<<<< HEAD
+=======
+    { id: "profile", label: "Profile", icon: "👤", description: "Manage your account settings" },
+>>>>>>> feature/frontend-ui
   ]
 
   if (loading) {
     return (
+<<<<<<< HEAD
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center">
         <div className="text-center fade-in">
           <div className="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-6"></div>
@@ -158,12 +206,20 @@ export const UserDashboard = () => {
             Loading Dashboard
           </h3>
           <p className="text-gray-600">Preparing your emergency response center...</p>
+=======
+      <div className="dashboard-loading">
+        <div className="dashboard-loading-content">
+          <div className="dashboard-loading-spinner"></div>
+          <h3 className="dashboard-loading-title">Loading Dashboard</h3>
+          <p className="dashboard-loading-subtitle">Preparing your emergency response center...</p>
+>>>>>>> feature/frontend-ui
         </div>
       </div>
     )
   }
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-gray-50 flex">
       {activeTab !== "incident-detail" && (
         <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
@@ -183,6 +239,25 @@ export const UserDashboard = () => {
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm font-medium text-gray-700">System Status: Active</span>
+=======
+    <div className="user-dashboard-container">
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-999 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      <div className={`sidebar-container ${isMobileSidebarOpen ? "open" : ""}`}>
+        <div className="user-sidebar-header">
+          <div className="sidebar-header-content">
+            <div className="user-sidebar-logo">
+              <img src="./ajali.svg" alt="ajali logo" />
+            </div>
+            <div className="user-sidebar-brand">
+              <h1>Ajali</h1>
+              <p>Emergency Response System</p>
+>>>>>>> feature/frontend-ui
             </div>
             <p className="text-xs text-gray-500 mt-1">Last updated: Just now</p>
           </div>
@@ -269,6 +344,7 @@ export const UserDashboard = () => {
             </button>
           </div>
         </div>
+<<<<<<< HEAD
       )}
 
       <div className="flex-1">
@@ -509,6 +585,334 @@ export const UserDashboard = () => {
             />
           )}
         </div>
+=======
+
+        <div className="user-sidebar-status">
+          <div className="sidebar-status-content">
+            <div className="sidebar-status-dot"></div>
+            <span className="sidebar-status-text">System Status: Active</span>
+          </div>
+          <p className="sidebar-status-updated">Last updated: Just now</p>
+        </div>
+
+        <nav className="sidebar-nav">
+          <div className="sidebar-nav-list">
+            {userTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`user-nav-item ${activeTab === tab.id ? "active" : ""}`}
+              >
+                <span className="user-nav-item-icon">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        <div className="user-sidebar-actions">
+          <h3 className="sidebar-actions-title">Quick Actions</h3>
+          <button onClick={() => handleTabChange("report")} className="user-action-btn primary">
+            Report Accident
+          </button>
+          <button onClick={() => handleTabChange("map")} className="user-action-btn secondary">
+            <span>🗺️</span>
+            View Map
+          </button>
+        </div>
+
+        <div className="user-sidebar-contacts">
+          <h3 className="sidebar-contacts-title">Emergency Contacts</h3>
+          <div className="sidebar-contacts-list">
+            <div className="user-contact-item">
+              <div className="user-contact-info">
+                <span className="sidebar-contact-icon">📞</span>
+                <span className="sidebar-contact-label">Emergency Services</span>
+              </div>
+              <span className="user-contact-number">911</span>
+            </div>
+            <div className="user-contact-item">
+              <div className="user-contact-info">
+                <span className="sidebar-contact-icon">🚒</span>
+                <span className="sidebar-contact-label">Fire Department</span>
+              </div>
+              <span className="user-contact-number">911</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="user-sidebar-profile">
+          <div className="sidebar-profile-info">
+            <div className="user-profile-avatar">
+              <span className="sidebar-profile-avatar-text">
+                {userData?.name ? userData.name.charAt(0).toUpperCase() : user?.name?.charAt(0).toUpperCase() || "A"}
+              </span>
+            </div>
+            <div className="sidebar-profile-details">
+              <p className="sidebar-profile-email">{userData?.email || user?.email || "admin@koci358.com"}</p>
+              <p className="sidebar-profile-role">Emergency Admin</p>
+            </div>
+          </div>
+          <button onClick={logout} className="sidebar-profile-logout">
+            <span className="sidebar-profile-logout-icon">🚪</span>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="user-dashboard-content">
+        {activeTab === "profile" && <ProfilePage onBack={() => handleTabChange("overview")} />}
+
+        {activeTab === "incident-detail" && selectedIncidentId && (
+          <IncidentDetailPage
+            incidentId={selectedIncidentId}
+            onBack={handleBackFromIncidentDetail}
+            backLabel="Back to My Reports"
+          />
+        )}
+
+        {activeTab !== "incident-detail" && activeTab !== "profile" && (
+          <>
+            <header className="user-dashboard-header">
+              <div className="user-header-content">
+                <button
+                  className="mobile-menu-toggle md:hidden"
+                  onClick={toggleMobileSidebar}
+                  aria-label="Toggle mobile menu"
+                >
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>☰</span>
+                </button>
+
+                <div className="user-header-info">
+                  <h1>Emergency Dashboard</h1>
+                  <p>Real-time accident reports and emergency response</p>
+                </div>
+                <div className="user-header-actions">
+                  <button onClick={() => handleTabChange("map")} className="user-view-map-btn">
+                    <span>📍</span>
+                    <span>View Map</span>
+                  </button>
+                  <div className="user-alerts-badge">
+                    <span className="icon">🔔</span>
+                    <span className="text">Alerts</span>
+                    <span className="count">6</span>
+                  </div>
+                  <button onClick={() => handleTabChange("report")} className="user-report-btn">
+                    <span>+</span>
+                    <span>Report Accident</span>
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="user-dashboard-main">
+              {activeTab === "overview" && (
+                <div className="fade-in">
+                  <div className="dashboard-stats-grid">
+                    <div className="dashboard-stat-card active-reports">
+                      <div className="dashboard-stat-card-content">
+                        <div className="dashboard-stat-card-info">
+                          <p>Active Reports</p>
+                          <p>{userStats?.activeReports || 3}</p>
+                        </div>
+                        <div className="dashboard-stat-card-icon">
+                          <span>⚠️</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="dashboard-stat-card critical">
+                      <div className="dashboard-stat-card-content">
+                        <div className="dashboard-stat-card-info">
+                          <p>Critical</p>
+                          <p>{userStats?.critical || 1}</p>
+                        </div>
+                        <div className="dashboard-stat-card-icon">
+                          <span>📈</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="dashboard-stat-card responders">
+                      <div className="dashboard-stat-card-content">
+                        <div className="dashboard-stat-card-info">
+                          <p>Responders</p>
+                          <p>{userStats?.responders || 20}</p>
+                        </div>
+                        <div className="dashboard-stat-card-icon">
+                          <span>👥</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="dashboard-stat-card resolved">
+                      <div className="dashboard-stat-card-content">
+                        <div className="dashboard-stat-card-info">
+                          <p>Resolved</p>
+                          <p>{userStats?.resolved || 2}</p>
+                        </div>
+                        <div className="dashboard-stat-card-icon">
+                          <span>✓</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-critical-alert">
+                    <div className="dashboard-critical-alert-content">
+                      <div className="dashboard-critical-alert-info">
+                        <div className="dashboard-critical-alert-icon">
+                          <span>⚠️</span>
+                        </div>
+                        <div className="dashboard-critical-alert-text">
+                          <h3>Critical Emergency Alert</h3>
+                          <p>1 critical accident requiring immediate attention.</p>
+                        </div>
+                      </div>
+                      <button className="dashboard-critical-alert-btn">View Critical</button>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-search-filters">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Search by location, type, or description..."
+                        className="dashboard-search-input"
+                      />
+                    </div>
+                    <div className="dashboard-filters">
+                      <select className="dashboard-filter-select">
+                        <option>All Types</option>
+                      </select>
+                      <select className="dashboard-filter-select">
+                        <option>All Levels</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-recent-reports">
+                    <div className="dashboard-recent-reports-header">
+                      <div className="dashboard-recent-reports-header-content">
+                        <h2>Recent Reports</h2>
+                        <span className="dashboard-recent-reports-count">
+                          {userStats?.allIncidents?.length || 5} reports found
+                        </span>
+                      </div>
+                    </div>
+                    <div className="dashboard-recent-reports-content">
+                      {userStats?.allIncidents && userStats.allIncidents.length > 0 ? (
+                        <div className="dashboard-reports-grid">
+                          {userStats.allIncidents.slice(0, 3).map((report) => (
+                            <div key={report.id} className="dashboard-report-card">
+                              <div className="dashboard-report-card-header">
+                                <span
+                                  className={`dashboard-report-card-severity ${
+                                    report.severity === "critical"
+                                      ? "critical"
+                                      : report.severity === "high"
+                                        ? "high"
+                                        : "medium"
+                                  }`}
+                                >
+                                  {report.severity?.toUpperCase() || "MEDIUM"}
+                                </span>
+                                <span className="dashboard-report-card-date">
+                                  {new Date(report.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <h3 className="dashboard-report-card-title">{report.title}</h3>
+                              <p className="dashboard-report-card-location">{report.location}</p>
+                              <div className="dashboard-report-card-reporter">
+                                <span className="reporter-icon">👤</span>
+                                <span>by {report.reporter_name || report.user?.name || "Unknown Reporter"}</span>
+                              </div>
+                              <div className="dashboard-report-card-footer">
+                                <span className="dashboard-report-card-type">{report.incident_type}</span>
+                                <span
+                                  className={`dashboard-report-card-status ${
+                                    report.status === "resolved"
+                                      ? "resolved"
+                                      : report.status === "in-progress"
+                                        ? "in-progress"
+                                        : "pending"
+                                  }`}
+                                >
+                                  {report.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="dashboard-empty-state">
+                          <div className="dashboard-empty-state-icon">📋</div>
+                          <h3>No reports found</h3>
+                          <p>Reports will appear here once they are submitted.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "incidents" && (
+                <div className="fade-in">
+                  <IncidentList
+                    incidents={incidents}
+                    onViewDetail={handleViewIncidentDetail}
+                    onIncidentUpdated={handleIncidentUpdated}
+                    onIncidentDeleted={handleIncidentDeleted}
+                  />
+                </div>
+              )}
+
+              {activeTab === "report" && (
+                <div className="fade-in">
+                  <IncidentForm onIncidentCreated={handleIncidentCreated} />
+                </div>
+              )}
+
+              {activeTab === "map" && (
+                <div className="fade-in">
+                  <div className="dashboard-map-container">
+                    <div className="dashboard-map-header">
+                      <h2>Incident Map</h2>
+                      <div className="dashboard-map-legend">
+                        <div className="dashboard-map-legend-item">
+                          <span className="dashboard-map-legend-dot critical"></span>
+                          <span>Critical</span>
+                        </div>
+                        <div className="dashboard-map-legend-item">
+                          <span className="dashboard-map-legend-dot high"></span>
+                          <span>High</span>
+                        </div>
+                        <div className="dashboard-map-legend-item">
+                          <span className="dashboard-map-legend-dot medium"></span>
+                          <span>Medium</span>
+                        </div>
+                        <div className="dashboard-map-legend-item">
+                          <span className="dashboard-map-legend-dot low"></span>
+                          <span>Low</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="dashboard-map-view">
+                      <MapView />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "rewards" && (
+                <div className="fade-in">
+                  <PointsSystem />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+>>>>>>> feature/frontend-ui
       </div>
     </div>
   )

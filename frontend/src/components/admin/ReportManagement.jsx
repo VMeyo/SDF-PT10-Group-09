@@ -23,7 +23,11 @@ export const ReportManagement = () => {
     total: 0,
     pending: 0,
     inProgress: 0,
+<<<<<<< HEAD
     resolved: 0,
+=======
+    approved: 0,
+>>>>>>> feature/frontend-ui
     rejected: 0,
   })
 
@@ -41,13 +45,18 @@ export const ReportManagement = () => {
 
   const fetchReports = async () => {
     try {
+<<<<<<< HEAD
       console.log("[v0] Fetching reports from:", `${API_BASE}/incidents/`)
       const response = await fetch(`${API_BASE}/incidents/`, {
+=======
+      const response = await fetch(`${API_BASE}/incidents`, {
+>>>>>>> feature/frontend-ui
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
         const data = await response.json()
+<<<<<<< HEAD
         console.log("[v0] Fetched reports data:", data)
         setReports(data)
       } else {
@@ -86,6 +95,15 @@ export const ReportManagement = () => {
       }
     } catch (error) {
       console.error("[v0] Error fetching reports:", error)
+=======
+        setReports(data)
+      } else {
+        setReports([])
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error)
+      setReports([])
+>>>>>>> feature/frontend-ui
     } finally {
       setLoading(false)
     }
@@ -143,9 +161,15 @@ export const ReportManagement = () => {
   const calculateStats = () => {
     setStats({
       total: reports.length,
+<<<<<<< HEAD
       pending: reports.filter((r) => r.status === "pending").length,
       inProgress: reports.filter((r) => r.status === "in_progress").length,
       resolved: reports.filter((r) => r.status === "resolved").length,
+=======
+      pending: reports.filter((r) => r.status === "pending" || r.status === "reported").length,
+      inProgress: reports.filter((r) => r.status === "in_progress" || r.status === "under_investigation").length,
+      approved: reports.filter((r) => r.status === "approved").length,
+>>>>>>> feature/frontend-ui
       rejected: reports.filter((r) => r.status === "rejected").length,
     })
   }
@@ -153,7 +177,10 @@ export const ReportManagement = () => {
   const updateReportStatus = async (reportId, newStatus, notes = "") => {
     setUpdating(reportId)
     try {
+<<<<<<< HEAD
       console.log("[v0] Updating report status:", reportId, newStatus)
+=======
+>>>>>>> feature/frontend-ui
       const response = await fetch(`${API_BASE}/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
@@ -169,6 +196,7 @@ export const ReportManagement = () => {
         )
         setReports(updatedReports)
 
+<<<<<<< HEAD
         // Update selected report if it's currently being viewed
         if (selectedReportId && selectedReportId === reportId) {
           // Assuming IncidentDetailPage will handle the update internally
@@ -181,12 +209,38 @@ export const ReportManagement = () => {
       }
     } catch (error) {
       console.error("[v0] Error updating report status:", error)
+=======
+        // Award points for approved incidents
+        if (newStatus === "approved") {
+          try {
+            const pointsResponse = await fetch(`${API_BASE}/incidents/${reportId}/award-points`, {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            })
+          } catch (error) {
+            console.error("Error awarding points:", error)
+          }
+        }
+
+        // Show success feedback
+        alert(`Report status updated to ${newStatus}`)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.message || errorData.msg || "Failed to update report status. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error updating report status:", error)
+>>>>>>> feature/frontend-ui
       alert("Error updating report status. Please check your connection.")
     } finally {
       setUpdating(null)
     }
   }
 
+<<<<<<< HEAD
   const assignReportToUser = async (reportId, userId) => {
     try {
       console.log("[v0] Assigning report:", reportId, "to user:", userId)
@@ -232,30 +286,46 @@ export const ReportManagement = () => {
     }
   }
 
+=======
+>>>>>>> feature/frontend-ui
   const deleteReport = async (reportId) => {
     if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
       return
     }
 
     try {
+<<<<<<< HEAD
       console.log("[v0] Deleting report:", reportId)
+=======
+>>>>>>> feature/frontend-ui
       const response = await fetch(`${API_BASE}/incidents/${reportId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
+<<<<<<< HEAD
+=======
+          "Content-Type": "application/json",
+>>>>>>> feature/frontend-ui
         },
       })
 
       if (response.ok) {
+<<<<<<< HEAD
         // Remove from both reports and filteredReports
         const updatedReports = reports.filter((report) => report.id !== reportId)
         setReports(updatedReports)
 
         // Close detail view if deleted report was being viewed
+=======
+        const updatedReports = reports.filter((report) => report.id !== reportId)
+        setReports(updatedReports)
+
+>>>>>>> feature/frontend-ui
         if (selectedReportId && selectedReportId === reportId) {
           handleBackToList()
         }
 
+<<<<<<< HEAD
         console.log("[v0] Report deleted successfully")
       } else {
         console.log("[v0] Failed to delete report, status:", response.status)
@@ -263,12 +333,23 @@ export const ReportManagement = () => {
       }
     } catch (error) {
       console.error("[v0] Error deleting report:", error)
+=======
+        // Show success message
+        alert("Report deleted successfully")
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.message || errorData.msg || "Failed to delete report. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error deleting report:", error)
+>>>>>>> feature/frontend-ui
       alert("Error deleting report. Please check your connection.")
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
+<<<<<<< HEAD
       case "resolved":
         return "bg-green-100 text-green-800 border-green-200"
       case "in_progress":
@@ -279,6 +360,21 @@ export const ReportManagement = () => {
         return "bg-red-100 text-red-800 border-red-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
+=======
+      case "approved":
+      case "verified":
+        return "bg-green-100 text-green-800"
+      case "in_progress":
+      case "under_investigation":
+        return "bg-blue-100 text-blue-800"
+      case "pending":
+      case "reported":
+        return "bg-orange-100 text-orange-800"
+      case "rejected":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+>>>>>>> feature/frontend-ui
     }
   }
 
@@ -307,7 +403,10 @@ export const ReportManagement = () => {
   const handleBackToList = () => {
     setCurrentView("list")
     setSelectedReportId(null)
+<<<<<<< HEAD
     // Refresh reports when coming back from detail view
+=======
+>>>>>>> feature/frontend-ui
     fetchReports()
   }
 
@@ -331,6 +430,7 @@ export const ReportManagement = () => {
           <h2 className="text-3xl font-bold mb-2">Report Management</h2>
           <p className="text-muted-foreground">Manage and review all incident reports</p>
         </div>
+<<<<<<< HEAD
         <div className="flex space-x-2">
           {selectedReports.length > 0 && (
             <div className="flex space-x-2">
@@ -347,6 +447,8 @@ export const ReportManagement = () => {
           )}
           <Button onClick={() => handleViewDetails(null)}>+ Create Report</Button>
         </div>
+=======
+>>>>>>> feature/frontend-ui
       </div>
 
       {/* Report Statistics */}
@@ -371,8 +473,13 @@ export const ReportManagement = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
+<<<<<<< HEAD
             <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
             <div className="text-sm text-gray-600">Resolved</div>
+=======
+            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+            <div className="text-sm text-gray-600">Approved</div>
+>>>>>>> feature/frontend-ui
           </CardContent>
         </Card>
         <Card>
@@ -405,7 +512,11 @@ export const ReportManagement = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
+<<<<<<< HEAD
               <option value="resolved">Resolved</option>
+=======
+              <option value="approved">Approved</option>
+>>>>>>> feature/frontend-ui
               <option value="rejected">Rejected</option>
             </select>
             <select
@@ -455,6 +566,7 @@ export const ReportManagement = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredReports.map((report) => (
+<<<<<<< HEAD
               <div
                 key={report.id}
                 className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -555,12 +667,101 @@ export const ReportManagement = () => {
                       Resolve
                     </Button>
 
+=======
+              <div key={report.id} className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50">
+                {/* Report Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold">{report.title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(report.status)}`}>
+                        {report.status === "reported"
+                          ? "reported"
+                          : report.status === "under_investigation"
+                            ? "under investigation"
+                            : report.status?.replace("_", " ") || "unknown"}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(report.severity)}`}>
+                        {report.severity || "medium"}
+                      </span>
+                      {report.verified && (
+                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Verified</span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 mb-3">{report.description}</p>
+                  </div>
+                </div>
+
+                {/* Report Details */}
+                <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
+                  <div className="flex items-center gap-1">
+                    <span>📍</span>
+                    <span>{report.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>🕒</span>
+                    <span>
+                      {new Date(report.created_at).toLocaleDateString()}{" "}
+                      {new Date(report.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span>by {report.reporter_name || "Unknown Reporter"}</span>
+                  </div>
+                  <div>
+                    <span>{report.media_count || 0} media files</span>
+                  </div>
+                </div>
+
+                {/* Status Change and Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">Change Status:</span>
+                      <select
+                        value={report.status}
+                        onChange={(e) => updateReportStatus(report.id, e.target.value)}
+                        disabled={updating === report.id}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(report.id)}
+                      className="text-blue-600 hover:bg-blue-50"
+                    >
+                      <span className="mr-1">👁️</span>
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(report.id)}
+                      className="text-green-600 hover:bg-green-50"
+                    >
+                      <span className="mr-1">✏️</span>
+                      Edit
+                    </Button>
+>>>>>>> feature/frontend-ui
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => deleteReport(report.id)}
                       className="text-red-600 hover:bg-red-50"
                     >
+<<<<<<< HEAD
+=======
+                      <span className="mr-1">🗑️</span>
+>>>>>>> feature/frontend-ui
                       Delete
                     </Button>
                   </div>

@@ -11,7 +11,11 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
   const [error, setError] = useState("")
   const { user } = useAuth()
 
+<<<<<<< HEAD
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
+=======
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
+>>>>>>> feature/frontend-ui
   const token = localStorage.getItem("token")
 
   const handleSubmitComment = async (e) => {
@@ -22,25 +26,39 @@ export const CommentSection = ({ incidentId, comments, onCommentAdded }) => {
     setError("")
 
     try {
+      console.log("[v0] Posting comment to incident:", incidentId)
       const response = await fetch(`${API_BASE}/incidents/${incidentId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+<<<<<<< HEAD
         body: JSON.stringify({ text: newComment }), // Flask expects 'text' not 'content'
+=======
+        body: JSON.stringify({ text: newComment.trim() }),
+>>>>>>> feature/frontend-ui
       })
 
-      const data = await response.json()
-
       if (response.ok) {
+        const data = await response.json()
+        console.log("[v0] Comment posted successfully:", data)
         onCommentAdded(data)
         setNewComment("")
+        // Show success feedback
+        alert("Comment posted successfully!")
       } else {
+<<<<<<< HEAD
         setError(data.msg || "Failed to add comment") // Flask uses 'msg' not 'message'
+=======
+        const errorData = await response.json().catch(() => ({}))
+        console.log("[v0] Comment post failed:", response.status, errorData)
+        setError(errorData.msg || errorData.message || "Failed to add comment")
+>>>>>>> feature/frontend-ui
       }
     } catch (error) {
-      setError("Network error. Please try again.")
+      console.error("[v0] Network error posting comment:", error)
+      setError("Network error. Please check your connection and try again.")
     } finally {
       setLoading(false)
     }
