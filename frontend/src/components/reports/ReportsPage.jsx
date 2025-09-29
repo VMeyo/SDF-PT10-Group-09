@@ -627,7 +627,8 @@ export const ReportsPage = () => {
         </h2>
         <div className="reports-grid">
           {filteredReports.map((report) => {
-            const mediaCount = report.media_count || Math.floor(Math.random() * 5) + 1
+            const mediaFiles = report.media || []
+            const mediaCount = mediaFiles.length || 0
             const responderCount = report.responder_count || Math.floor(Math.random() * 10) + 1
             const casualtyCount =
               report.casualty_count || (report.severity === "critical" ? Math.floor(Math.random() * 5) + 1 : 0)
@@ -670,23 +671,64 @@ export const ReportsPage = () => {
                     )}
                   </div>
 
-                  <div className="media-section">
-                    <svg className="star-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                      />
-                    </svg>
-                    <span className="media-text">{mediaCount} media files</span>
-                  </div>
+                  {mediaFiles.length > 0 ? (
+                    <div className="media-preview-section">
+                      <div className="media-preview-grid">
+                        {mediaFiles.slice(0, 3).map((media, index) => (
+                          <div key={media.id || index} className="media-preview-item">
+                            {media.file_type?.startsWith("image/") ? (
+                              <img
+                                src={media.file_url || "/placeholder.svg"}
+                                alt={`Media ${index + 1}`}
+                                className="media-preview-image"
+                                onError={(e) => {
+                                  e.target.style.display = "none"
+                                }}
+                              />
+                            ) : media.file_type?.startsWith("video/") ? (
+                              <video src={media.file_url} className="media-preview-video" muted />
+                            ) : (
+                              <div className="media-preview-placeholder">
+                                <span>📄</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {mediaFiles.length > 3 && <div className="media-preview-more">+{mediaFiles.length - 3}</div>}
+                      </div>
+                      <div className="media-count-badge">
+                        <svg className="star-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                          />
+                        </svg>
+                        <span className="media-text">{mediaCount} media files</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="media-section">
+                      <svg className="star-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                        />
+                      </svg>
+                      <span className="media-text">No media files</span>
+                    </div>
+                  )}
 
                   <div className="header-bottom-row">
                     <div className={`severity-badge ${report.severity}`}>
                       {report.severity?.toUpperCase() || "MEDIUM"}
                     </div>
-                    <div className="time-ago">{getTimeAgo(report.created_at)}</div>
+                    <div className="time-ago" title={formatDate(report.created_at)}>
+                      {getTimeAgo(report.created_at)}
+                    </div>
                   </div>
                 </div>
 
@@ -724,6 +766,19 @@ export const ReportsPage = () => {
                     <span>{report.location || "Location not specified"}</span>
                   </div>
 
+                  {report.latitude && report.longitude && (
+                    <div className="mini-map-container">
+                      <iframe
+                        title={`Map for ${report.title}`}
+                        width="100%"
+                        height="150"
+                        style={{ border: 0, borderRadius: "8px" }}
+                        loading="lazy"
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${report.latitude},${report.longitude}&zoom=15`}
+                      ></iframe>
+                    </div>
+                  )}
+
                   {casualtyCount > 0 && (
                     <div className="casualty-info">
                       <svg className="casualty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -753,9 +808,11 @@ export const ReportsPage = () => {
                   <div className="reporter-section">
                     <div className="reporter-info">
                       <div className="reporter-avatar" style={{ backgroundColor: categoryInfo.color }}>
-                        {report.reporter_name ? report.reporter_name.charAt(0).toUpperCase() : "U"}
+                        {(report.reporter_name || report.user?.name || "U").charAt(0).toUpperCase()}
                       </div>
-                      <span className="reporter-name">by {report.reporter_name || "Unknown"}</span>
+                      <span className="reporter-name">
+                        by {report.reporter_name || report.user?.name || "Unknown Reporter"}
+                      </span>
                     </div>
 
                     <div className="status-section">
