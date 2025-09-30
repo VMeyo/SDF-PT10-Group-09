@@ -32,21 +32,7 @@ export const AdminControlPanel = () => {
       console.log("[v0] API_BASE:", API_BASE)
       console.log("[v0] Token:", token ? "Present" : "Missing")
 
-      const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }).catch((err) => {
-        console.error("[v0] Stats fetch error:", err)
-        return { ok: false }
-      })
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        console.log("[v0] Admin stats received:", statsData)
-        setStats(statsData)
-      }
+      // Stats will be calculated from the actual data we fetch
 
       console.log("[v0] Fetching users from:", `${API_BASE}/users`)
       const usersResponse = await fetch(`${API_BASE}/users`, {
@@ -123,10 +109,13 @@ export const AdminControlPanel = () => {
         }
 
         console.log("[v0] Reports data received:", reportsArray.length, "reports")
+        const activeReports = reportsArray.filter((r) => r.status !== "resolved" && r.status !== "rejected").length
+
         setStats((prev) => ({
           ...prev,
           totalReports: reportsArray.length,
-          activeReports: reportsArray.filter((r) => r.status !== "resolved" && r.status !== "rejected").length,
+          activeReports: activeReports,
+          avgResponse: "5min", // Default value since we don't have this data from backend
         }))
       } else {
         console.error("[v0] Failed to fetch reports. Status:", reportsResponse.status, "Response:", reportsText)
