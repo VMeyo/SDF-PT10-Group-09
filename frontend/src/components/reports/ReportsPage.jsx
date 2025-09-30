@@ -90,7 +90,7 @@ export const ReportsPage = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch(`${API_BASE}/incidents/mine`, {
+      const response = await fetch(`${API_BASE}/incidents`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -99,15 +99,17 @@ export const ReportsPage = () => {
 
       if (response.ok) {
         const data = await response.json()
-        setReports(data)
-        console.log("[v0] Successfully fetched user reports:", data.length)
+        // Assuming the backend returns user info or we can check created_by
+        const userReports = Array.isArray(data) ? data.filter((report) => report.created_by === token) : []
+        setReports(userReports)
+        console.log("[v0] Successfully fetched user reports:", userReports.length)
 
         // Calculate stats
         setStats({
-          totalReports: data.length,
-          pending: data.filter((r) => r.status === "pending").length,
-          resolved: data.filter((r) => r.status === "resolved").length,
-          rejected: data.filter((r) => r.status === "rejected").length,
+          totalReports: userReports.length,
+          pending: userReports.filter((r) => r.status === "pending").length,
+          resolved: userReports.filter((r) => r.status === "resolved").length,
+          rejected: userReports.filter((r) => r.status === "rejected").length,
         })
       } else {
         console.error("[v0] Failed to fetch reports with status:", response.status)
@@ -802,7 +804,7 @@ export const ReportsPage = () => {
                         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                       />
                     </svg>
-                    <span className="responder-text">{responderCount} responders</span>
+                    <span className="responder-text">{report.responder_count || "Responders not specified"}</span>
                   </div>
 
                   <div className="reporter-section">

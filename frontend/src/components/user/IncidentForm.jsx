@@ -74,12 +74,13 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const formData = new FormData()
-      formData.append("file", file) // Flask expects 'file' not 'media'
+      formData.append("file", file)
+      formData.append("incident_id", incidentId)
 
       try {
         setUploadProgress((prev) => ({ ...prev, [i]: 0 }))
 
-        const response = await fetch(`${API_BASE}/incidents/${incidentId}/media`, {
+        const response = await fetch(`${API_BASE}/media/upload`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -89,7 +90,7 @@ export const IncidentForm = ({ onIncidentCreated }) => {
 
         if (response.ok) {
           const data = await response.json()
-          uploadedUrls.push(data.file_url) // Flask returns file_url
+          uploadedUrls.push(data.file_url)
           setUploadProgress((prev) => ({ ...prev, [i]: 100 }))
         }
       } catch (error) {
@@ -138,7 +139,6 @@ export const IncidentForm = ({ onIncidentCreated }) => {
 
   const reverseGeocode = async (lat, lng) => {
     try {
-      // Using a simple reverse geocoding service (you might want to use Google Maps API)
       const response = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
       )
@@ -148,7 +148,7 @@ export const IncidentForm = ({ onIncidentCreated }) => {
         const address = [data.locality || data.city, data.countryName].filter(Boolean).join(", ")
         setFormData((prev) => ({
           ...prev,
-          location: prev.location || address, // Only set if location is empty
+          location: prev.location || address,
         }))
       }
     } catch (error) {
