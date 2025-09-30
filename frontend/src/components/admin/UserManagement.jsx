@@ -28,8 +28,8 @@ export const UserManagement = () => {
     if (searchTerm || roleFilter !== "all" || statusFilter !== "all") {
       const filtered = users.filter((user) => {
         const matchesSearch =
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesRole = roleFilter === "all" || user.role === roleFilter
         const matchesStatus = statusFilter === "all" || user.status === statusFilter
         return matchesSearch && matchesRole && matchesStatus
@@ -42,16 +42,58 @@ export const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
+      console.log("[v0] Using token:", token ? "Token present" : "No token")
+
       const response = await fetch(`${API_BASE}/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       })
 
+      console.log("[v0] Users response status:", response.status)
+      console.log("[v0] Users response headers:", Object.fromEntries(response.headers.entries()))
+
+      const responseText = await response.text()
+      console.log("[v0] Users raw response:", responseText)
+
       if (response.ok) {
-        const data = await response.json()
-        setUsers(data)
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (e) {
+          console.error("[v0] Failed to parse JSON:", e)
+          setUsers([])
+          setLoading(false)
+          return
+        }
+
+        console.log("[v0] Users parsed data:", data)
+        console.log("[v0] Data type:", typeof data, "Is array:", Array.isArray(data))
+
+        let usersArray = []
+        if (Array.isArray(data)) {
+          usersArray = data
+        } else if (data.users && Array.isArray(data.users)) {
+          usersArray = data.users
+        } else if (data.data && Array.isArray(data.data)) {
+          usersArray = data.data
+        } else {
+          console.error("[v0] Unexpected data format:", data)
+        }
+
+        console.log("[v0] Final users array:", usersArray, "Length:", usersArray.length)
+        setUsers(usersArray)
+      } else {
+        console.error("[v0] Failed to fetch users. Status:", response.status)
+        console.error("[v0] Error response:", responseText)
+        setUsers([])
       }
     } catch (error) {
-      console.error("Error fetching users:", error)
+      console.error("[v0] Error fetching users:", error)
+      console.error("[v0] Error stack:", error.stack)
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -61,18 +103,26 @@ export const UserManagement = () => {
     setPromoting(userId)
 
     try {
-      const response = await fetch(`${API_BASE}/auth/promote/${userId}`, {
-        method: "PATCH",
+      console.log("[v0] Promoting user:", userId)
+      const response = await fetch(`${API_BASE}/auth/users/${userId}/promote`, {
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
 
+      console.log("[v0] Promote response status:", response.status)
       if (response.ok) {
         setUsers(users.map((user) => (user.id === userId ? { ...user, role: "admin" } : user)))
+        alert("User promoted to admin successfully!")
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.msg || errorData.message || "Failed to promote user")
       }
     } catch (error) {
-      console.error("Error promoting user:", error)
+      console.error("[v0] Error promoting user:", error)
+      alert("Error promoting user. Please check your connection.")
     } finally {
       setPromoting(null)
     }
@@ -104,9 +154,13 @@ export const UserManagement = () => {
 
       if (response.ok) {
         setUsers(users.filter((user) => user.id !== userId))
+        alert("User deleted successfully!")
+      } else {
+        alert("Failed to delete user")
       }
     } catch (error) {
       console.error("Error deleting user:", error)
+      alert("Error deleting user")
     }
   }
 
@@ -240,10 +294,10 @@ export const UserManagement = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-lg font-medium">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user.name ? user.name.charAt(0).toUpperCase() : "U"}
                   </div>
                   <div>
-                    <h3 className="font-semibold">{user.name}</h3>
+                    <h3 className="font-semibold">{user.name || "Unknown User"}</h3>
                     <p className="text-sm text-muted-foreground">{user.email}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className={`px-2 py-1 text-xs rounded-full border ${getRoleColor(user.role)}`}>
@@ -256,8 +310,11 @@ export const UserManagement = () => {
                 <div className="flex items-center space-x-2">
                   <div className="text-right text-sm">
                     <div className="font-medium">{user.points || 0} points</div>
-                    <div className="text-muted-foreground">{user.incident_count || 0} reports</div>
-                    <div className="text-muted-foreground">Joined {new Date(user.created_at).toLocaleDateString()}</div>
+                    {user.created_at && (
+                      <div className="text-muted-foreground">
+                        Joined {new Date(user.created_at).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex space-x-1">

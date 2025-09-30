@@ -47,10 +47,9 @@ export const incidentAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Update incident
   update: (id, data) =>
     apiRequest(`/incidents/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       body: JSON.stringify(data),
     }),
 
@@ -60,17 +59,10 @@ export const incidentAPI = {
       method: "DELETE",
     }),
 
-  // Update incident status (admin only)
   updateStatus: (id, status) =>
-    apiRequest(`/incidents/${id}/status`, {
+    apiRequest(`/admin/incidents/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
-    }),
-
-  // Award points for approved incident
-  awardPoints: (id) =>
-    apiRequest(`/incidents/${id}/award-points`, {
-      method: "PATCH",
     }),
 
   // Add comment to incident
@@ -91,7 +83,6 @@ export const userAPI = {
   // Get single user
   getById: (id) => apiRequest(`/users/${id}`),
 
-  // Update user profile
   update: (id, data) =>
     apiRequest(`/users/${id}`, {
       method: "PATCH",
@@ -122,21 +113,18 @@ export const authAPI = {
   // Get current user
   me: () => apiRequest("/auth/me"),
 
-  // Promote user to admin
   promote: (userId) =>
-    apiRequest(`/auth/promote/${userId}`, {
-      method: "PATCH",
+    apiRequest(`/auth/users/${userId}/promote`, {
+      method: "PUT",
     }),
 }
 
 export const mediaAPI = {
-  // Upload media to incident
   upload: (file, incidentId) => {
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("incident_id", incidentId)
 
-    return apiRequest("/media/upload", {
+    return apiRequest(`/media/${incidentId}/upload`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -144,4 +132,27 @@ export const mediaAPI = {
       body: formData,
     })
   },
+
+  delete: (mediaId) =>
+    apiRequest(`/media/${mediaId}`, {
+      method: "DELETE",
+    }),
+}
+
+export const adminAPI = {
+  // Get admin stats
+  getStats: () => apiRequest("/admin/stats"),
+
+  // List all incidents (with optional status filter)
+  getIncidents: (status = null) => {
+    const endpoint = status ? `/admin/incidents?status=${status}` : "/admin/incidents"
+    return apiRequest(endpoint)
+  },
+
+  // Update incident status
+  updateIncidentStatus: (id, status) =>
+    apiRequest(`/admin/incidents/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
 }

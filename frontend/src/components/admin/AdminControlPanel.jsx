@@ -28,25 +28,27 @@ export const AdminControlPanel = () => {
 
   const fetchAdminData = async () => {
     try {
+      console.log("[v0] Fetching admin data...")
+      console.log("[v0] API_BASE:", API_BASE)
+      console.log("[v0] Token:", token ? "Present" : "Missing")
+
       const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+      }).catch((err) => {
+        console.error("[v0] Stats fetch error:", err)
+        return { ok: false }
       })
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
+        console.log("[v0] Admin stats received:", statsData)
         setStats(statsData)
-      } else {
-        setStats({
-          totalReports: 0,
-          activeReports: 0,
-          totalUsers: 0,
-          avgResponse: "0min",
-        })
       }
 
+      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
       const usersResponse = await fetch(`${API_BASE}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -54,17 +56,42 @@ export const AdminControlPanel = () => {
         },
       })
 
+      console.log("[v0] Users response status:", usersResponse.status)
+      const usersText = await usersResponse.text()
+      console.log("[v0] Users raw response:", usersText)
+
       if (usersResponse.ok) {
-        const usersData = await usersResponse.json()
-        setUsers(usersData)
+        let usersData
+        try {
+          usersData = JSON.parse(usersText)
+        } catch (e) {
+          console.error("[v0] Failed to parse users JSON:", e)
+          setUsers([])
+          setLoading(false)
+          return
+        }
+
+        let usersArray = []
+        if (Array.isArray(usersData)) {
+          usersArray = usersData
+        } else if (usersData.users && Array.isArray(usersData.users)) {
+          usersArray = usersData.users
+        } else if (usersData.data && Array.isArray(usersData.data)) {
+          usersArray = usersData.data
+        }
+
+        console.log("[v0] Users data received:", usersArray.length, "users")
+        setUsers(usersArray)
         setStats((prev) => ({
           ...prev,
-          totalUsers: usersData.length,
+          totalUsers: usersArray.length,
         }))
       } else {
+        console.error("[v0] Failed to fetch users. Status:", usersResponse.status, "Response:", usersText)
         setUsers([])
       }
 
+      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
       const reportsResponse = await fetch(`${API_BASE}/incidents`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -72,16 +99,41 @@ export const AdminControlPanel = () => {
         },
       })
 
+      console.log("[v0] Reports response status:", reportsResponse.status)
+      const reportsText = await reportsResponse.text()
+      console.log("[v0] Reports raw response:", reportsText)
+
       if (reportsResponse.ok) {
-        const reportsData = await reportsResponse.json()
+        let reportsData
+        try {
+          reportsData = JSON.parse(reportsText)
+        } catch (e) {
+          console.error("[v0] Failed to parse reports JSON:", e)
+          setLoading(false)
+          return
+        }
+
+        let reportsArray = []
+        if (Array.isArray(reportsData)) {
+          reportsArray = reportsData
+        } else if (reportsData.incidents && Array.isArray(reportsData.incidents)) {
+          reportsArray = reportsData.incidents
+        } else if (reportsData.data && Array.isArray(reportsData.data)) {
+          reportsArray = reportsData.data
+        }
+
+        console.log("[v0] Reports data received:", reportsArray.length, "reports")
         setStats((prev) => ({
           ...prev,
-          totalReports: reportsData.length,
-          activeReports: reportsData.filter((r) => r.status !== "resolved" && r.status !== "rejected").length,
+          totalReports: reportsArray.length,
+          activeReports: reportsArray.filter((r) => r.status !== "resolved" && r.status !== "rejected").length,
         }))
+      } else {
+        console.error("[v0] Failed to fetch reports. Status:", reportsResponse.status, "Response:", reportsText)
       }
     } catch (error) {
-      console.error("Error fetching admin data:", error)
+      console.error("[v0] Error fetching admin data:", error)
+      console.error("[v0] Error stack:", error.stack)
       setStats({
         totalReports: 0,
         activeReports: 0,
@@ -157,7 +209,7 @@ export const AdminControlPanel = () => {
                 <span className="text-white text-xs">🔔</span>
               </div>
               <span className="text-sm font-medium text-red-700">Alerts</span>
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">1</span>
+              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{stats.activeReports}</span>
             </div>
             <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -177,7 +229,7 @@ export const AdminControlPanel = () => {
                   <p className="text-3xl font-bold bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
                     {stats.totalReports}
                   </p>
-                  <p className="text-xs text-red-500 mt-1">+12% this week</p>
+                  <p className="text-xs text-red-500 mt-1">All time</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg">⚠️</span>
@@ -211,7 +263,7 @@ export const AdminControlPanel = () => {
                   <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     {stats.totalUsers}
                   </p>
-                  <p className="text-xs text-blue-500 mt-1">+3% this month</p>
+                  <p className="text-xs text-blue-500 mt-1">Registered</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg">👥</span>
@@ -228,7 +280,7 @@ export const AdminControlPanel = () => {
                   <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                     {stats.avgResponse}
                   </p>
-                  <p className="text-xs text-green-500 mt-1">Improving</p>
+                  <p className="text-xs text-green-500 mt-1">Response time</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white text-lg">📊</span>
