@@ -16,13 +16,9 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Enable CORS with detailed configuration
-    CORS(app, resources={r"/*": {
-        "origins": ["http://127.0.0.1:5173", "http://localhost:5173", "https://sdf-pt-10-group-09.vercel.app"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicitly allow OPTIONS
-        "allow_headers": ["Content-Type", "Authorization"],     # Allow common headers
-        "supports_credentials": True                            # Allow cookies/auth if needed
-    }})
+    # Enable CORS for frontend URLs
+    CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5173", "http://localhost:5173", "https://sdf-pt-10-group-09.vercel.app"
+]}})
 
     # Ensure MAIL_DEFAULT_SENDER is correctly set
     sender = app.config.get("MAIL_DEFAULT_SENDER")
