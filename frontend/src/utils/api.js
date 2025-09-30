@@ -1,6 +1,7 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sdf-pt10-group-09.onrender.com/api/v1"
 
 console.log("[v0] API_BASE configured as:", API_BASE)
+console.log("[v0] Environment mode:", import.meta.env.MODE)
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem("token")
