@@ -160,7 +160,7 @@ export const ReportManagement = () => {
     setUpdating(reportId)
     try {
       console.log("[v0] Updating report status:", reportId, "to", newStatus)
-      const response = await fetch(`${API_BASE}/admin/incidents/${reportId}/status`, {
+      const response = await fetch(`${API_BASE}/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

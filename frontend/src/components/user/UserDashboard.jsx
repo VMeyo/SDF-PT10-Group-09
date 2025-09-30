@@ -42,7 +42,7 @@ export const UserDashboard = () => {
   const fetchUserData = async () => {
     try {
       const [incidentsRes, allIncidentsRes, pointsRes] = await Promise.all([
-        fetch(`${API_BASE}/incidents/mine`, {
+        fetch(`${API_BASE}/incidents`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export const UserDashboard = () => {
         }).catch((err) => {
           return { ok: false, status: 422 }
         }),
-        fetch(`${API_BASE}/incidents/`, {
+        fetch(`${API_BASE}/incidents`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -68,7 +68,10 @@ export const UserDashboard = () => {
 
       if (incidentsRes.ok) {
         const incidentsData = await incidentsRes.json()
-        setIncidents(incidentsData)
+        const userIncidents = Array.isArray(incidentsData)
+          ? incidentsData.filter((incident) => incident.created_by === user?.id)
+          : []
+        setIncidents(userIncidents)
       } else {
         setIncidents([])
       }
