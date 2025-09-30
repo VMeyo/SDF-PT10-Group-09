@@ -226,6 +226,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
 
   const fetchIncidentDetails = async () => {
     try {
+      console.log("[v0] Fetching incident details for ID:", incidentId)
       const [incidentRes, commentsRes] = await Promise.all([
         fetch(`${API_BASE}/incidents/${incidentId}`, {
           headers: {
@@ -239,12 +240,15 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
+          console.error("[v0] Comments fetch failed:", err)
           return { ok: false }
         }),
       ])
 
+      console.log("[v0] Incident response status:", incidentRes.status)
       if (incidentRes.ok) {
         const incidentData = await incidentRes.json()
+        console.log("[v0] Incident data received:", incidentData)
         setIncident(incidentData)
       } else {
         setError(`Failed to load incident (Status: ${incidentRes.status})`)
@@ -252,6 +256,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
 
       if (commentsRes.ok) {
         const commentsData = await commentsRes.json()
+        console.log("[v0] Comments data received:", commentsData)
         setComments(commentsData)
       } else {
         setComments([])
@@ -267,7 +272,8 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
   const updateReportStatus = async (newStatus) => {
     setUpdating(true)
     try {
-      const response = await fetch(`${API_BASE}/incidents/${incidentId}/status`, {
+      console.log("[v0] Updating incident status to:", newStatus)
+      const response = await fetch(`${API_BASE}/admin/incidents/${incidentId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -276,10 +282,13 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
         body: JSON.stringify({ status: newStatus }),
       })
 
+      console.log("[v0] Status update response:", response.status)
       if (response.ok) {
         setIncident({ ...incident, status: newStatus })
+        alert("Status updated successfully!")
       } else {
-        alert("Failed to update report status. Please try again.")
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.msg || errorData.message || "Failed to update report status. Please try again.")
       }
     } catch (error) {
       console.error("[v0] Error updating report status:", error)
@@ -295,6 +304,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
     }
 
     try {
+      console.log("[v0] Deleting incident:", incidentId)
       const response = await fetch(`${API_BASE}/incidents/${incidentId}`, {
         method: "DELETE",
         headers: {
@@ -302,7 +312,9 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
         },
       })
 
+      console.log("[v0] Delete response:", response.status)
       if (response.ok) {
+        alert("Report deleted successfully!")
         onBack() // Navigate back to reports list
       } else {
         alert("Failed to delete report. Please try again.")
@@ -422,22 +434,24 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             </h1>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-3 sm:space-y-0 text-sm opacity-90">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">📅</span>
-                <span>
-                  {new Date(incident.created_at).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}{" "}
-                  at{" "}
-                  {new Date(incident.created_at).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
+              {incident.created_at && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">📅</span>
+                  <span>
+                    {new Date(incident.created_at).toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}{" "}
+                    at{" "}
+                    {new Date(incident.created_at).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <span className="text-lg">📍</span>
                 <span className="truncate">{incident.location || "Location not specified"}</span>
@@ -474,6 +488,32 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   </h3>
                   <IncidentMap incident={incident} />
                 </div>
+
+                {incident.media && incident.media.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
+                      <span className="mr-2 text-xl">📷</span>
+                      Media Files ({incident.media.length})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {incident.media.map((media, index) => (
+                        <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200">
+                          {media.file_url && media.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                            <img
+                              src={`${API_BASE.replace("/api/v1", "")}${media.file_url}`}
+                              alt={`Media ${index + 1}`}
+                              className="w-full h-48 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                              <span className="text-4xl">🎥</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -526,30 +566,32 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               <CardContent>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm">
-                    {incident.reporter_name ? incident.reporter_name.charAt(0).toUpperCase() : "A"}
+                    U
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">{incident.reporter_name || "Anonymous"}</div>
+                    <div className="font-semibold text-gray-900">User #{incident.created_by}</div>
                     <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg inline-block">
                       Citizen Reporter
                     </div>
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">Reported:</span>{" "}
-                    {new Date(incident.created_at).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}{" "}
-                    at{" "}
-                    {new Date(incident.created_at).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
+                  {incident.created_at && (
+                    <div>
+                      <span className="font-medium">Reported:</span>{" "}
+                      {new Date(incident.created_at).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}{" "}
+                      at{" "}
+                      {new Date(incident.created_at).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  )}
                   <div>
                     <span className="font-medium">Status:</span>{" "}
                     <span className={incident.verified ? "text-green-600" : "text-orange-600"}>
@@ -622,7 +664,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
+                    <option value="investigating">Investigating</option>
                     <option value="resolved">Resolved</option>
                     <option value="rejected">Rejected</option>
                   </select>

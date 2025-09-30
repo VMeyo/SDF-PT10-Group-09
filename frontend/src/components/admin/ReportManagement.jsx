@@ -17,13 +17,13 @@ export const ReportManagement = () => {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [selectedReports, setSelectedReports] = useState([])
-  const [currentView, setCurrentView] = useState("list") // "list" or "detail"
+  const [currentView, setCurrentView] = useState("list")
   const [selectedReportId, setSelectedReportId] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
     inProgress: 0,
-    approved: 0,
+    resolved: 0,
     rejected: 0,
   })
 
@@ -41,18 +41,57 @@ export const ReportManagement = () => {
 
   const fetchReports = async () => {
     try {
+      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
+      console.log("[v0] Using token:", token ? "Token present" : "No token")
+
       const response = await fetch(`${API_BASE}/incidents`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       })
 
+      console.log("[v0] Reports response status:", response.status)
+      console.log("[v0] Reports response headers:", Object.fromEntries(response.headers.entries()))
+
+      const responseText = await response.text()
+      console.log("[v0] Reports raw response:", responseText)
+
       if (response.ok) {
-        const data = await response.json()
-        setReports(data)
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (e) {
+          console.error("[v0] Failed to parse JSON:", e)
+          setReports([])
+          setLoading(false)
+          return
+        }
+
+        console.log("[v0] Reports parsed data:", data)
+        console.log("[v0] Data type:", typeof data, "Is array:", Array.isArray(data))
+
+        let reportsArray = []
+        if (Array.isArray(data)) {
+          reportsArray = data
+        } else if (data.incidents && Array.isArray(data.incidents)) {
+          reportsArray = data.incidents
+        } else if (data.data && Array.isArray(data.data)) {
+          reportsArray = data.data
+        } else {
+          console.error("[v0] Unexpected data format:", data)
+        }
+
+        console.log("[v0] Final reports array:", reportsArray, "Length:", reportsArray.length)
+        setReports(reportsArray)
       } else {
+        console.error("[v0] Failed to fetch reports. Status:", response.status)
+        console.error("[v0] Error response:", responseText)
         setReports([])
       }
     } catch (error) {
-      console.error("Error fetching reports:", error)
+      console.error("[v0] Error fetching reports:", error)
+      console.error("[v0] Error stack:", error.stack)
       setReports([])
     } finally {
       setLoading(false)
@@ -65,10 +104,9 @@ export const ReportManagement = () => {
     if (searchTerm) {
       filtered = filtered.filter(
         (report) =>
-          report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.reporter_name.toLowerCase().includes(searchTerm.toLowerCase()),
+          report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          report.location?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
@@ -111,9 +149,9 @@ export const ReportManagement = () => {
   const calculateStats = () => {
     setStats({
       total: reports.length,
-      pending: reports.filter((r) => r.status === "pending" || r.status === "reported").length,
-      inProgress: reports.filter((r) => r.status === "in_progress" || r.status === "under_investigation").length,
-      approved: reports.filter((r) => r.status === "approved").length,
+      pending: reports.filter((r) => r.status === "pending").length,
+      inProgress: reports.filter((r) => r.status === "in_progress" || r.status === "investigating").length,
+      resolved: reports.filter((r) => r.status === "resolved").length,
       rejected: reports.filter((r) => r.status === "rejected").length,
     })
   }
@@ -121,44 +159,29 @@ export const ReportManagement = () => {
   const updateReportStatus = async (reportId, newStatus, notes = "") => {
     setUpdating(reportId)
     try {
-      const response = await fetch(`${API_BASE}/incidents/${reportId}/status`, {
+      console.log("[v0] Updating report status:", reportId, "to", newStatus)
+      const response = await fetch(`${API_BASE}/admin/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: newStatus, notes }),
+        body: JSON.stringify({ status: newStatus }),
       })
 
+      console.log("[v0] Status update response:", response.status)
       if (response.ok) {
         const updatedReports = reports.map((report) =>
           report.id === reportId ? { ...report, status: newStatus } : report,
         )
         setReports(updatedReports)
-
-        // Award points for approved incidents
-        if (newStatus === "approved") {
-          try {
-            const pointsResponse = await fetch(`${API_BASE}/incidents/${reportId}/award-points`, {
-              method: "PATCH",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            })
-          } catch (error) {
-            console.error("Error awarding points:", error)
-          }
-        }
-
-        // Show success feedback
         alert(`Report status updated to ${newStatus}`)
       } else {
         const errorData = await response.json().catch(() => ({}))
         alert(errorData.message || errorData.msg || "Failed to update report status. Please try again.")
       }
     } catch (error) {
-      console.error("Error updating report status:", error)
+      console.error("[v0] Error updating report status:", error)
       alert("Error updating report status. Please check your connection.")
     } finally {
       setUpdating(null)
@@ -171,6 +194,7 @@ export const ReportManagement = () => {
     }
 
     try {
+      console.log("[v0] Deleting report:", reportId)
       const response = await fetch(`${API_BASE}/incidents/${reportId}`, {
         method: "DELETE",
         headers: {
@@ -179,6 +203,7 @@ export const ReportManagement = () => {
         },
       })
 
+      console.log("[v0] Delete response:", response.status)
       if (response.ok) {
         const updatedReports = reports.filter((report) => report.id !== reportId)
         setReports(updatedReports)
@@ -187,28 +212,25 @@ export const ReportManagement = () => {
           handleBackToList()
         }
 
-        // Show success message
         alert("Report deleted successfully")
       } else {
         const errorData = await response.json().catch(() => ({}))
         alert(errorData.message || errorData.msg || "Failed to delete report. Please try again.")
       }
     } catch (error) {
-      console.error("Error deleting report:", error)
+      console.error("[v0] Error deleting report:", error)
       alert("Error deleting report. Please check your connection.")
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "approved":
-      case "verified":
+      case "resolved":
         return "bg-green-100 text-green-800"
       case "in_progress":
-      case "under_investigation":
+      case "investigating":
         return "bg-blue-100 text-blue-800"
       case "pending":
-      case "reported":
         return "bg-orange-100 text-orange-800"
       case "rejected":
         return "bg-red-100 text-red-800"
@@ -289,8 +311,8 @@ export const ReportManagement = () => {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-            <div className="text-sm text-gray-600">Approved</div>
+            <div className="text-2xl font-bold text-green-600">{stats.resolved}</div>
+            <div className="text-sm text-gray-600">Resolved</div>
           </CardContent>
         </Card>
         <Card>
@@ -323,7 +345,8 @@ export const ReportManagement = () => {
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
-              <option value="approved">Approved</option>
+              <option value="investigating">Investigating</option>
+              <option value="resolved">Resolved</option>
               <option value="rejected">Rejected</option>
             </select>
             <select
@@ -380,17 +403,12 @@ export const ReportManagement = () => {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold">{report.title}</h3>
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(report.status)}`}>
-                        {report.status === "reported"
-                          ? "reported"
-                          : report.status === "under_investigation"
-                            ? "under investigation"
-                            : report.status?.replace("_", " ") || "unknown"}
+                        {report.status?.replace("_", " ") || "unknown"}
                       </span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(report.severity)}`}>
-                        {report.severity || "medium"}
-                      </span>
-                      {report.verified && (
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Verified</span>
+                      {report.severity && (
+                        <span className={`px-2 py-1 text-xs rounded-full ${getSeverityColor(report.severity)}`}>
+                          {report.severity}
+                        </span>
                       )}
                     </div>
                     <p className="text-gray-600 mb-3">{report.description}</p>
@@ -401,21 +419,25 @@ export const ReportManagement = () => {
                 <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
                   <div className="flex items-center gap-1">
                     <span>📍</span>
-                    <span>{report.location}</span>
+                    <span>{report.location || "Location not specified"}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span>🕒</span>
-                    <span>
-                      {new Date(report.created_at).toLocaleDateString()}{" "}
-                      {new Date(report.created_at).toLocaleTimeString()}
-                    </span>
-                  </div>
+                  {report.created_at && (
+                    <div className="flex items-center gap-1">
+                      <span>🕒</span>
+                      <span>
+                        {new Date(report.created_at).toLocaleDateString()}{" "}
+                        {new Date(report.created_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  )}
                   <div>
-                    <span>by {report.reporter_name || "Unknown Reporter"}</span>
+                    <span>by User #{report.created_by}</span>
                   </div>
-                  <div>
-                    <span>{report.media_count || 0} media files</span>
-                  </div>
+                  {report.media && (
+                    <div>
+                      <span>{report.media.length} media files</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status Change and Actions */}
@@ -430,8 +452,8 @@ export const ReportManagement = () => {
                         className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                       >
                         <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="approved">Approved</option>
+                        <option value="investigating">Investigating</option>
+                        <option value="resolved">Resolved</option>
                         <option value="rejected">Rejected</option>
                       </select>
                     </div>
