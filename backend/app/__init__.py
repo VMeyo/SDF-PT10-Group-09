@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from .config import Config
 from .extensions import db, migrate, jwt, mail
@@ -16,6 +16,7 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Enhanced CORS configuration
     CORS(app, resources={
         r"/api/*": {
             "origins": [
@@ -42,12 +43,22 @@ def create_app(config_class=Config):
     mail.init_app(app)
 
     # Register Blueprints
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(users_bp)
-    app.register_blueprint(incidents_bp)
-    app.register_blueprint(media_bp)
-    app.register_blueprint(comments_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(migrate_bp)
+    app.register_blueprint(auth_bp, url_prefix='/api/v1')
+    app.register_blueprint(users_bp, url_prefix='/api/v1')
+    app.register_blueprint(incidents_bp, url_prefix='/api/v1')
+    app.register_blueprint(media_bp, url_prefix='/api/v1')
+    app.register_blueprint(comments_bp, url_prefix='/api/v1')
+    app.register_blueprint(admin_bp, url_prefix='/api/v1')
+    app.register_blueprint(migrate_bp, url_prefix='/api/v1')
+
+    # Global OPTIONS handler for preflight requests
+    @app.after_request
+    def after_request(response):
+        if request.method == 'OPTIONS':
+            response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            response.headers.add('Access-Control-Max-Age', '86400')
+        return response
 
     return app
