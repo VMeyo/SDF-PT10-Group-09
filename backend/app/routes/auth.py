@@ -10,7 +10,7 @@ from app.extensions import db, mail
 from app.models import User
 from flask_mail import Message
 
-auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/v1/auth")
+auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/v1/auth", strict_slashes=False)
 
 
 # ---------------------

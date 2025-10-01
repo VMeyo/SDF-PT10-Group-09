@@ -5,7 +5,7 @@ from app.extensions import db, mail
 from app.models import Incident, User
 from flask_mail import Message
 
-admin_bp = Blueprint("admin_bp", __name__, url_prefix="/api/v1/admin")
+admin_bp = Blueprint("admin_bp", __name__, url_prefix="/api/v1/admin", strict_slashes=False)
 
 # ---------------------
 # Admin check decorator

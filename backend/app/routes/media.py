@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models import Media, Incident, User
 
-media_bp = Blueprint("media_bp", __name__, url_prefix="/api/v1/media")
+media_bp = Blueprint("media_bp", __name__, url_prefix="/api/v1/media", strict_slashes=False)
 
 # Allowed extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "mp4", "mov", "avi"}

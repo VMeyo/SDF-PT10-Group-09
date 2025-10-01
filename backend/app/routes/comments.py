@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models import Comment, Incident
 
-comments_bp = Blueprint("comments_bp", __name__, url_prefix="/api/v1/incidents")
+comments_bp = Blueprint("comments_bp", __name__, url_prefix="/api/v1/incidents", strict_slashes=False)
 
 # ---------------------
 # Add a comment to an incident
