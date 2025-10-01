@@ -31,7 +31,6 @@ def create_app(config_class=Config):
         }
     })
 
-    # Ensure MAIL_DEFAULT_SENDER is correctly set
     sender = app.config.get("MAIL_DEFAULT_SENDER")
     if sender:
         app.config["MAIL_DEFAULT_SENDER"] = sender
@@ -51,28 +50,5 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix='/api/v1')
     app.register_blueprint(migrate_bp, url_prefix='/api/v1')
 
-# FIXED after_request handler
-    @app.after_request
-    def after_request(response):
-        origin = request.headers.get('Origin')
-        
-        # Only allow specific origins
-        allowed_origins = [
-            "http://127.0.0.1:5173",
-            "http://localhost:5173",
-            "https://sdf-pt-10-group-09.vercel.app"
-        ]
-        
-        if origin in allowed_origins:
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-            
-        if request.method == 'OPTIONS':
-            response.headers['Access-Control-Max-Age'] = '86400'
-            return response
-            
-        return response
 
     return app
