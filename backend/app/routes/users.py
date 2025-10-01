@@ -3,14 +3,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models import User
 
-users_bp = Blueprint("users_bp", __name__, url_prefix="/api/v1/users", strict_slashes=False)
+users_bp = Blueprint("users_bp", __name__, url_prefix="/api/v1/users")
 
 POINTS_TO_AIRTIME_RATE = 5  # 1 point = 5 KES
 
-
 # ---------------------
 # Get current user's points
-# GET /api/v1/users/points
 # ---------------------
 @users_bp.route("/points", methods=["GET"])
 @jwt_required()
@@ -22,7 +20,6 @@ def get_points():
 
 # ---------------------
 # Redeem points for rewards
-# POST /api/v1/users/redeem
 # ---------------------
 @users_bp.route("/redeem", methods=["POST"])
 @jwt_required()
@@ -42,6 +39,7 @@ def redeem_points():
     user.points -= redeem_points
     db.session.commit()
 
+    # Auto-calculate airtime if reward is "airtime"
     airtime_amount = None
     if reward_name.lower() == "airtime":
         airtime_amount = redeem_points * POINTS_TO_AIRTIME_RATE
@@ -55,7 +53,6 @@ def redeem_points():
 
 # ---------------------
 # Leaderboard: Top reporters by points
-# GET /api/v1/users/leaderboard
 # ---------------------
 @users_bp.route("/leaderboard", methods=["GET"])
 def leaderboard():
@@ -73,7 +70,6 @@ def leaderboard():
 
 # ---------------------
 # List all users (Admin only)
-# GET /api/v1/users/
 # ---------------------
 @users_bp.route("/", methods=["GET"])
 @jwt_required()
@@ -95,22 +91,6 @@ def list_users():
         } for u in users
     ])
 
-
-# ---------------------
-# Get single user by ID
-# GET /api/v1/users/<id>
-# ---------------------
-@users_bp.route("/<int:user_id>", methods=["GET"])
-@jwt_required()
-def get_user(user_id):
-    user = User.query.get_or_404(user_id)
-    return jsonify({
-        "id": user.id,
-        "name": user.name,
-        "email": user.email,
-        "role": user.role,
-        "points": user.points
-    })
 
 
 # from flask import Blueprint, request, jsonify
