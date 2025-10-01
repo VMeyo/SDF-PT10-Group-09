@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "../../contexts/AuthContext"
 import { Button } from "../ui/Button"
 import { Input } from "../ui/Input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/Card"
 
 export const IncidentForm = ({ onIncidentCreated }) => {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -163,6 +165,8 @@ export const IncidentForm = ({ onIncidentCreated }) => {
     setSuccess("")
 
     try {
+      console.log("[v0] Creating incident as user:", user)
+
       const response = await fetch(`${API_BASE}/incidents/`, {
         method: "POST",
         headers: {
@@ -177,10 +181,13 @@ export const IncidentForm = ({ onIncidentCreated }) => {
           longitude: formData.longitude || 0,
           category: formData.category,
           severity: formData.severity,
+          reporter_name: user?.name || user?.username || "Anonymous",
         }),
       })
 
       const data = await response.json()
+
+      console.log("[v0] Incident creation response:", data)
 
       if (response.ok) {
         let mediaUrls = []

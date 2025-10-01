@@ -32,7 +32,7 @@ export const UserDashboard = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId)
-    setIsMobileSidebarOpen(false) // Close mobile sidebar when tab changes
+    setIsMobileSidebarOpen(false)
   }
 
   const toggleMobileSidebar = () => {
@@ -41,6 +41,32 @@ export const UserDashboard = () => {
 
   const fetchUserData = async () => {
     try {
+      let currentUserId = user?.id
+      let currentUserData = user
+
+      if (token) {
+        try {
+          const profileRes = await fetch(`${API_BASE}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (profileRes.ok) {
+            const profileData = await profileRes.json()
+            currentUserData = profileData
+            currentUserId = profileData.id
+            setUserData(profileData)
+            console.log("[v0] Current user data:", profileData)
+          } else {
+            setUserData(user)
+          }
+        } catch (profileError) {
+          console.error("[v0] Error fetching profile:", profileError)
+          setUserData(user)
+        }
+      }
+
       const [incidentsRes, allIncidentsRes, pointsRes] = await Promise.all([
         fetch(`${API_BASE}/incidents`, {
           headers: {
@@ -48,6 +74,7 @@ export const UserDashboard = () => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
+          console.error("[v0] Error fetching user incidents:", err)
           return { ok: false, status: 422 }
         }),
         fetch(`${API_BASE}/incidents`, {
@@ -62,17 +89,34 @@ export const UserDashboard = () => {
             "Content-Type": "application/json",
           },
         }).catch((err) => {
+          console.error("[v0] Error fetching points:", err)
           return { ok: false }
         }),
       ])
 
       if (incidentsRes.ok) {
         const incidentsData = await incidentsRes.json()
+        console.log("[v0] All incidents fetched:", incidentsData)
+        console.log("[v0] Current user ID for filtering:", currentUserId)
+
         const userIncidents = Array.isArray(incidentsData)
-          ? incidentsData.filter((incident) => incident.created_by === user?.id)
+          ? incidentsData.filter((incident) => {
+              const incidentUserId = String(incident.created_by || incident.user_id || "")
+              const currentUserIdStr = String(currentUserId || "")
+              const matches = incidentUserId === currentUserIdStr
+
+              if (matches) {
+                console.log("[v0] Matched incident:", incident.id, incident.title)
+              }
+
+              return matches
+            })
           : []
+
+        console.log("[v0] Filtered user incidents:", userIncidents.length, "out of", incidentsData.length)
         setIncidents(userIncidents)
       } else {
+        console.log("[v0] Failed to fetch incidents, status:", incidentsRes.status)
         setIncidents([])
       }
 
@@ -98,27 +142,8 @@ export const UserDashboard = () => {
       }
 
       setUserStats((prev) => ({ ...prev, ...stats, allIncidents }))
-
-      if (token) {
-        try {
-          const profileRes = await fetch(`${API_BASE}/auth/me`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          })
-          if (profileRes.ok) {
-            const profileData = await profileRes.json()
-            setUserData(profileData)
-          } else {
-            setUserData(user)
-          }
-        } catch (profileError) {
-          setUserData(user)
-        }
-      }
     } catch (error) {
-      console.error("Error fetching user data:", error)
+      console.error("[v0] Error fetching user data:", error)
       setUserData(user)
       setIncidents([])
       setUserStats({ activeTab: 0, critical: 0, responders: 0, resolved: 0, allIncidents: [] })

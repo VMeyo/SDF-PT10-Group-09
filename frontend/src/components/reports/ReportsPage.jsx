@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { IncidentDetailPage } from "../incidents/IncidentDetailPage" // Added import for IncidentDetailPage
+import { useAuth } from "../../contexts/AuthContext"
+import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
 import "./ReportsPage.css"
 
 export const ReportsPage = () => {
+  const { user } = useAuth()
   const [stats, setStats] = useState({
     totalReports: 0,
     pending: 0,
@@ -16,9 +18,10 @@ export const ReportsPage = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All Status")
   const [loading, setLoading] = useState(true)
-  const [editingReport, setEditingReport] = useState(null) // Added states for edit functionality
-  const [deletingReport, setDeletingReport] = useState(null) // Added states for delete functionality
-  const [selectedIncident, setSelectedIncident] = useState(null) // Added state for incident detail navigation
+  const [editingReport, setEditingReport] = useState(null)
+  const [deletingReport, setDeletingReport] = useState(null)
+  const [selectedIncident, setSelectedIncident] = useState(null)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -88,6 +91,30 @@ export const ReportsPage = () => {
     return "⚠️"
   }
 
+  const fetchReporterData = async (userId) => {
+    if (reportersData[userId]) {
+      return reportersData[userId]
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReportersData((prev) => ({ ...prev, [userId]: userData }))
+        return userData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+    }
+    return null
+  }
+
   const fetchReports = async () => {
     try {
       const response = await fetch(`${API_BASE}/incidents`, {
@@ -99,12 +126,24 @@ export const ReportsPage = () => {
 
       if (response.ok) {
         const data = await response.json()
-        // Assuming the backend returns user info or we can check created_by
-        const userReports = Array.isArray(data) ? data.filter((report) => report.created_by === token) : []
-        setReports(userReports)
-        console.log("[v0] Successfully fetched user reports:", userReports.length)
 
-        // Calculate stats
+        console.log("[v0] Current user ID:", user?.id)
+        console.log("[v0] All incidents:", data.length)
+
+        const userReports = Array.isArray(data)
+          ? data.filter((report) => {
+              const isUserReport = report.created_by === user?.id || report.user_id === user?.id
+              console.log("[v0] Report", report.id, "created_by:", report.created_by, "matches user:", isUserReport)
+              return isUserReport
+            })
+          : []
+
+        console.log("[v0] User's reports:", userReports.length)
+        setReports(userReports)
+
+        const uniqueUserIds = [...new Set(userReports.map((r) => r.created_by || r.user_id).filter(Boolean))]
+        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
+
         setStats({
           totalReports: userReports.length,
           pending: userReports.filter((r) => r.status === "pending").length,
@@ -636,6 +675,19 @@ export const ReportsPage = () => {
               report.casualty_count || (report.severity === "critical" ? Math.floor(Math.random() * 5) + 1 : 0)
             const isVerified = report.verified || report.status === "resolved" || Math.random() > 0.5
 
+            const reporterId = report.created_by || report.user_id
+            const reporterInfo = reportersData[reporterId]
+
+            const reporterName =
+              reporterInfo?.name ||
+              reporterInfo?.username ||
+              report.reporter_name ||
+              user?.name ||
+              user?.username ||
+              "Anonymous Reporter"
+
+            console.log("[v0] Report", report.id, "reporter:", reporterName, "from data:", reporterInfo)
+
             const getCategoryInfo = (title, category) => {
               const titleLower = title.toLowerCase()
               if (titleLower.includes("fire") || category === "Fire Emergency") {
@@ -680,15 +732,28 @@ export const ReportsPage = () => {
                           <div key={media.id || index} className="media-preview-item">
                             {media.file_type?.startsWith("image/") ? (
                               <img
-                                src={media.file_url || "/placeholder.svg"}
+                                src={
+                                  media.file_url?.startsWith("http")
+                                    ? media.file_url
+                                    : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                                }
                                 alt={`Media ${index + 1}`}
                                 className="media-preview-image"
                                 onError={(e) => {
-                                  e.target.style.display = "none"
+                                  console.error("[v0] Failed to load image:", media.file_url)
+                                  e.target.src = "/incident-scene.png"
                                 }}
                               />
                             ) : media.file_type?.startsWith("video/") ? (
-                              <video src={media.file_url} className="media-preview-video" muted />
+                              <video
+                                src={
+                                  media.file_url?.startsWith("http")
+                                    ? media.file_url
+                                    : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                                }
+                                className="media-preview-video"
+                                muted
+                              />
                             ) : (
                               <div className="media-preview-placeholder">
                                 <span>📄</span>
@@ -756,13 +821,7 @@ export const ReportsPage = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                       />
                     </svg>
                     <span>{report.location || "Location not specified"}</span>
@@ -810,11 +869,9 @@ export const ReportsPage = () => {
                   <div className="reporter-section">
                     <div className="reporter-info">
                       <div className="reporter-avatar" style={{ backgroundColor: categoryInfo.color }}>
-                        {(report.reporter_name || report.user?.name || "U").charAt(0).toUpperCase()}
+                        {reporterName.charAt(0).toUpperCase()}
                       </div>
-                      <span className="reporter-name">
-                        by {report.reporter_name || report.user?.name || "Unknown Reporter"}
-                      </span>
+                      <span className="reporter-name">by {reporterName}</span>
                     </div>
 
                     <div className="status-section">
