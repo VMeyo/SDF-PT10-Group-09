@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models import Incident, Comment, Media, User
 
-incidents_bp = Blueprint("incidents", __name__, url_prefix="/api/v1/incidents")
+incidents_bp = Blueprint("incidents", __name__, url_prefix="/api/v1/incidents", strict_slashes=False)
 
 ALLOWED_STATUSES = ["pending", "in-progress", "resolved", "rejected"]
 

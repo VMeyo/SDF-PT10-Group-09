@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models import User
 
-users_bp = Blueprint("users_bp", __name__, url_prefix="/api/v1/users")
+users_bp = Blueprint("users_bp", __name__, url_prefix="/api/v1/users", strict_slashes=False)
 
 POINTS_TO_AIRTIME_RATE = 5  # 1 point = 5 KES
 
