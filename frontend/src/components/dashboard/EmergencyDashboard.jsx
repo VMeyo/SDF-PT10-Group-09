@@ -13,6 +13,7 @@ export const EmergencyDashboard = () => {
   })
   const [recentReports, setRecentReports] = useState([])
   const [loading, setLoading] = useState(true)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -20,6 +21,30 @@ export const EmergencyDashboard = () => {
   useEffect(() => {
     fetchDashboardData()
   }, [])
+
+  const fetchReporterData = async (userId) => {
+    if (reportersData[userId]) {
+      return reportersData[userId]
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReportersData((prev) => ({ ...prev, [userId]: userData }))
+        return userData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+    }
+    return null
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -39,17 +64,20 @@ export const EmergencyDashboard = () => {
         const incidents = await response.json()
         console.log("[v0] Dashboard incidents received:", incidents)
 
+        const uniqueUserIds = [...new Set(incidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
+        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
+
         setStats({
           activeReports: incidents.filter((i) => i.status !== "resolved").length,
           critical: incidents.filter((i) => i.severity === "high").length,
-          responders: 20, // This would come from a responders API
+          responders: 20,
           resolved: incidents.filter((i) => i.status === "resolved").length,
         })
 
         setRecentReports(
           incidents.slice(0, 3).map((incident) => ({
             ...incident,
-            mediaCount: Math.floor(Math.random() * 5) + 1, // Mock media count
+            mediaCount: Math.floor(Math.random() * 5) + 1,
             timeAgo: getTimeAgo(new Date(incident.created_at)),
           })),
         )
@@ -108,6 +136,8 @@ export const EmergencyDashboard = () => {
   }
 
   const getTimeAgo = (date) => {
+    if (!date || isNaN(date.getTime())) return "Date not available"
+
     const now = new Date()
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
 
@@ -298,75 +328,82 @@ export const EmergencyDashboard = () => {
       <div>
         <h2 className="text-xl lg:text-2xl font-semibold text-gray-800 mb-4 lg:mb-6">Recent Reports</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          {recentReports.map((report, index) => (
-            <Card
-              key={report.id}
-              className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-white/80 backdrop-blur-sm"
-            >
-              <div className="relative">
-                <div className="h-32 lg:h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                  <div className="text-center">
-                    <span className="text-2xl lg:text-4xl text-gray-400">📷</span>
-                    <p className="text-xs lg:text-sm text-gray-500 mt-2">{report.mediaCount} media files</p>
-                  </div>
-                </div>
+          {recentReports.map((report, index) => {
+            const reporterId = report.created_by || report.user_id
+            const reporterInfo = reportersData[reporterId]
+            const reporterName =
+              reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Anonymous Reporter"
 
-                <div className="absolute top-2 lg:top-3 left-2 lg:left-3 flex space-x-2">
-                  <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center shadow-md">
-                    <span className="w-2 h-2 bg-white rounded-full mr-1"></span>
-                    Verified
-                  </span>
-                </div>
-
-                <div className="absolute top-2 lg:top-3 right-2 lg:right-3">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium shadow-md ${getSeverityBadge(report.severity)}`}
-                  >
-                    {report.severity?.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3">
-                  <span className="bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg">
-                    {report.timeAgo}
-                  </span>
-                </div>
-              </div>
-
-              <CardContent className="p-4 lg:p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-2 flex-1 min-w-0">
-                    <span className="text-yellow-500">🚗</span>
-                    <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm lg:text-base">{report.title}</h3>
-                  </div>
-                  <div className="flex space-x-1 flex-shrink-0">
-                    <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">👁️</button>
-                    <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">✏️</button>
-                    <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">🗑️</button>
-                  </div>
-                </div>
-
-                <p className="text-xs lg:text-sm text-gray-600 mb-4 line-clamp-2">{report.description}</p>
-
-                <div className="flex flex-col space-y-2 text-xs text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <span>📍</span>
-                    <span className="line-clamp-1">{report.location}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <span>👤</span>
-                      <span>{report.reporter_name || "Anonymous"}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <span>👥</span>
-                      <span>{Math.floor(Math.random() * 5) + 1} responders</span>
+            return (
+              <Card
+                key={report.id}
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-white/80 backdrop-blur-sm"
+              >
+                <div className="relative">
+                  <div className="h-32 lg:h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-2xl lg:text-4xl text-gray-400">📷</span>
+                      <p className="text-xs lg:text-sm text-gray-500 mt-2">{report.mediaCount} media files</p>
                     </div>
                   </div>
+
+                  <div className="absolute top-2 lg:top-3 left-2 lg:left-3 flex space-x-2">
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center shadow-md">
+                      <span className="w-2 h-2 bg-white rounded-full mr-1"></span>
+                      Verified
+                    </span>
+                  </div>
+
+                  <div className="absolute top-2 lg:top-3 right-2 lg:right-3">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full font-medium shadow-md ${getSeverityBadge(report.severity)}`}
+                    >
+                      {report.severity?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-2 lg:bottom-3 left-2 lg:left-3">
+                    <span className="bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg">
+                      {report.timeAgo}
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                <CardContent className="p-4 lg:p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <span className="text-yellow-500">🚗</span>
+                      <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm lg:text-base">{report.title}</h3>
+                    </div>
+                    <div className="flex space-x-1 flex-shrink-0">
+                      <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">👁️</button>
+                      <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">✏️</button>
+                      <button className="p-1 lg:p-2 hover:bg-gray-100 rounded-lg transition-colors">🗑️</button>
+                    </div>
+                  </div>
+
+                  <p className="text-xs lg:text-sm text-gray-600 mb-4 line-clamp-2">{report.description}</p>
+
+                  <div className="flex flex-col space-y-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <span>📍</span>
+                      <span className="line-clamp-1">{report.location}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1">
+                        <span>👤</span>
+                        <span>{reporterName}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span>👥</span>
+                        <span>{Math.floor(Math.random() * 5) + 1} responders</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </div>
     </div>

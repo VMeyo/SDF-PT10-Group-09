@@ -22,21 +22,45 @@ export const UserDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [userData, setUserData] = useState(null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+  }
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen)
+  }
 
   useEffect(() => {
     fetchUserData()
   }, [])
 
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId)
-    setIsMobileSidebarOpen(false)
-  }
+  const fetchReporterData = async (userId) => {
+    if (reportersData[userId]) {
+      return reportersData[userId]
+    }
 
-  const toggleMobileSidebar = () => {
-    setIsMobileSidebarOpen(!isMobileSidebarOpen)
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReportersData((prev) => ({ ...prev, [userId]: userData }))
+        return userData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+    }
+    return null
   }
 
   const fetchUserData = async () => {
@@ -123,6 +147,8 @@ export const UserDashboard = () => {
       let allIncidents = []
       if (allIncidentsRes.ok) {
         allIncidents = await allIncidentsRes.json()
+        const uniqueUserIds = [...new Set(allIncidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
+        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
       } else {
         console.log("[v0] Failed to fetch all incidents, using empty array")
       }
@@ -484,18 +510,40 @@ export const UserDashboard = () => {
                             }
 
                             const getTimeAgo = (dateString) => {
-                              const now = new Date()
-                              const reportDate = new Date(dateString)
-                              const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
+                              if (!dateString) return "Date not available"
 
-                              if (diffInMinutes < 60) {
-                                return `${diffInMinutes}m ago`
-                              } else if (diffInMinutes < 1440) {
-                                return `${Math.floor(diffInMinutes / 60)}h ago`
-                              } else {
-                                return `${Math.floor(diffInMinutes / 1440)}d ago`
+                              try {
+                                const reportDate = new Date(dateString)
+                                if (isNaN(reportDate.getTime())) return "Invalid date"
+
+                                const now = new Date()
+                                const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
+
+                                if (diffInMinutes < 1) return "Just now"
+                                if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+
+                                const diffInHours = Math.floor(diffInMinutes / 60)
+                                if (diffInHours < 24) return `${diffInHours}h ago`
+
+                                const diffInDays = Math.floor(diffInHours / 24)
+                                if (diffInDays < 7) return `${diffInDays}d ago`
+
+                                return reportDate.toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                              } catch (error) {
+                                return "Date not available"
                               }
                             }
+
+                            const reporterId = report.created_by || report.user_id
+                            const reporterInfo = reportersData[reporterId]
+                            const reporterName =
+                              reporterInfo?.name ||
+                              reporterInfo?.username ||
+                              report.reporter_name ||
+                              "Anonymous Reporter"
 
                             return (
                               <div key={report.id} className="modern-report-card">
@@ -558,13 +606,9 @@ export const UserDashboard = () => {
 
                                   <div className="reporter-section">
                                     <div className="reporter-avatar">
-                                      <span className="avatar-text">
-                                        {(report.reporter_name || report.user?.name || "U").charAt(0).toUpperCase()}
-                                      </span>
+                                      <span className="avatar-text">{reporterName.charAt(0).toUpperCase()}</span>
                                     </div>
-                                    <span className="reporter-name">
-                                      by {report.reporter_name || report.user?.name || "Unknown Reporter"}
-                                    </span>
+                                    <span className="reporter-name">by {reporterName}</span>
                                     <div className={`status-badge-small ${report.status || "pending"}`}>
                                       {report.status === "resolved" ? "Verified" : "Responding"}
                                     </div>
