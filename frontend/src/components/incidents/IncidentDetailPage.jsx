@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useAuth } from "../../contexts/AuthContext"
 import { Button } from "../ui/Button"
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card"
 import { CommentSection } from "./CommentSection"
@@ -211,11 +212,13 @@ const IncidentMap = ({ incident }) => {
 }
 
 export const IncidentDetailPage = ({ incidentId, onBack }) => {
+  const { user } = useAuth()
   const [incident, setIncident] = useState(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [updating, setUpdating] = useState(false)
+  const [reporterData, setReporterData] = useState(null)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -223,6 +226,36 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
   useEffect(() => {
     fetchIncidentDetails()
   }, [incidentId])
+
+  const fetchReporterData = async (userId) => {
+    try {
+      console.log("[v0] Fetching reporter data for user ID:", userId)
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReporterData(userData)
+        console.log("[v0] Reporter data fetched:", userData)
+      } else {
+        console.error("[v0] Failed to fetch reporter data, status:", response.status)
+        if (userId === user?.id) {
+          setReporterData(user)
+          console.log("[v0] Using current user data as fallback:", user)
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+      if (userId === user?.id) {
+        setReporterData(user)
+        console.log("[v0] Using current user data as fallback after error:", user)
+      }
+    }
+  }
 
   const fetchIncidentDetails = async () => {
     try {
@@ -250,6 +283,14 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
         const incidentData = await incidentRes.json()
         console.log("[v0] Incident data received:", incidentData)
         setIncident(incidentData)
+
+        const reporterUserId = incidentData.created_by || incidentData.user_id
+        if (reporterUserId) {
+          fetchReporterData(reporterUserId)
+        } else if (user) {
+          setReporterData(user)
+          console.log("[v0] No reporter ID in incident, using current user:", user)
+        }
       } else {
         setError(`Failed to load incident (Status: ${incidentRes.status})`)
       }
@@ -384,7 +425,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
             </Button>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="bg-red-100 text-red-800 px-3 py-2 rounded-xl text-sm font-medium border border-red-200">
+            <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-xl text-sm font-medium border border-orange-200">
               🔔 Alerts
             </div>
             <div className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm">
@@ -463,7 +504,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
 
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="shadow-sm border-gray-200 rounded-xl">
               <CardHeader className="pb-4">
@@ -472,7 +512,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Description */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3 text-lg">Description</h3>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
@@ -480,7 +519,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   </div>
                 </div>
 
-                {/* Location */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                     <span className="mr-2 text-xl">📍</span>
@@ -498,11 +536,19 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {incident.media.map((media, index) => (
                         <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200">
-                          {media.file_url && media.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                          {media.file_url && media.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                             <img
-                              src={`${API_BASE.replace("/api/v1", "")}${media.file_url}`}
+                              src={
+                                media.file_url?.startsWith("http")
+                                  ? media.file_url
+                                  : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                              }
                               alt={`Media ${index + 1}`}
                               className="w-full h-48 object-cover"
+                              onError={(e) => {
+                                console.error("[v0] Failed to load image:", media.file_url)
+                                e.target.src = "/incident-scene.png"
+                              }}
                             />
                           ) : (
                             <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
@@ -517,18 +563,15 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               </CardContent>
             </Card>
 
-            {/* Media Upload */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <MediaUpload incidentId={incident.id} onMediaUploaded={fetchIncidentDetails} />
             </div>
 
-            {/* Comments Section */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <CommentSection incidentId={incident.id} comments={comments} onCommentAdded={handleCommentAdded} />
             </div>
           </div>
 
-          {/* Right Column - Emergency Response & Details */}
           <div className="space-y-6">
             <Card className="shadow-sm border-red-200 rounded-xl bg-gradient-to-br from-red-50 to-red-100">
               <CardHeader className="pb-4">
@@ -566,10 +609,17 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               <CardContent>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm">
-                    U
+                    {(reporterData?.name || reporterData?.username || incident?.reporter_name || "U")
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">User #{incident.created_by}</div>
+                    <div className="font-semibold text-gray-900">
+                      {reporterData?.name ||
+                        reporterData?.username ||
+                        incident?.reporter_name ||
+                        (incident?.created_by ? `User #${incident.created_by}` : "Anonymous Reporter")}
+                    </div>
                     <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg inline-block">
                       Citizen Reporter
                     </div>
@@ -598,6 +648,12 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                       {incident.verified ? "Verified" : "Unverified"}
                     </span>
                   </div>
+                  {reporterData?.email && (
+                    <div>
+                      <span className="font-medium">Contact:</span>{" "}
+                      <span className="text-blue-600">{reporterData.email}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -621,7 +677,9 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Media Files:</span>
-                    <span className="font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                    <span
+                      className={`font-medium px-2 py-1 rounded-full text-xs ${incident.media?.length > 0 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-600"}`}
+                    >
                       {incident.media?.length || 0}
                     </span>
                   </div>
@@ -649,7 +707,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               </CardContent>
             </Card>
 
-            {/* Admin Actions */}
             <Card className="shadow-sm border-gray-200 rounded-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Admin Actions</CardTitle>

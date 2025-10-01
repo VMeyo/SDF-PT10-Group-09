@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "../ui/Card"
+import "./GoogleMapView.css"
 
 export const GoogleMapView = () => {
   const mapRef = useRef(null)
@@ -140,28 +141,53 @@ export const GoogleMapView = () => {
     const lng =
       Number.parseFloat(report.longitude) || Number.parseFloat(report.lng) || 36.8219 + (Math.random() - 0.5) * 0.1
 
+    // Create custom marker with pulsing effect
+    const markerColor = getSeverityMarkerColor(report.severity || report.priority)
+    const severityClass = (report.severity || report.priority || "medium").toLowerCase()
+
+    // Create a custom HTML marker with pulsing animation
+    const markerDiv = document.createElement("div")
+    markerDiv.className = "map-marker-pulse"
+    markerDiv.style.cssText = `
+      width: 20px;
+      height: 20px;
+      background-color: ${markerColor};
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      position: relative;
+    `
+
+    // Add pulsing rings for critical and high severity
+    if (severityClass === "critical" || severityClass === "high") {
+      markerDiv.style.animation =
+        severityClass === "critical" ? "blink-critical 1s ease-in-out infinite" : "blink-high 1.5s ease-in-out infinite"
+    }
+
     const marker = new window.google.maps.Marker({
       position: { lat, lng },
       map: googleMap,
       title: report.title || report.description || `Incident ${report.id}`,
       icon: {
         path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: getSeverityMarkerColor(report.severity || report.priority),
-        fillOpacity: 0.8,
+        scale: 10,
+        fillColor: markerColor,
+        fillOpacity: 0.9,
         strokeColor: "#ffffff",
-        strokeWeight: 2,
+        strokeWeight: 3,
       },
+      animation: window.google.maps.Animation.DROP,
     })
 
     const infoWindow = new window.google.maps.InfoWindow({
       content: `
-        <div class="p-3">
-          <h3 class="font-semibold text-gray-900">${report.title || report.description || `Incident ${report.id}`}</h3>
-          <p class="text-sm text-gray-600 mt-1">${report.location || "Location not specified"}</p>
-          <div class="mt-2 flex items-center justify-between">
-            <span class="px-2 py-1 text-xs rounded-full ${getSeverityBadgeClass(report.severity || report.priority)}">${report.status}</span>
-            <span class="text-xs text-gray-500">${report.casualties || 0} casualties</span>
+        <div class="custom-info-window">
+          <h3>${report.title || report.description || `Incident ${report.id}`}</h3>
+          <p>${report.location || "Location not specified"}</p>
+          <div class="info-badges">
+            <span class="status-badge ${getSeverityBadgeClass(report.severity || report.priority)}">${report.status || "active"}</span>
+            <span class="casualty-count">${report.casualties || 0} casualties</span>
           </div>
         </div>
       `,
@@ -360,6 +386,12 @@ export const GoogleMapView = () => {
         <div className="flex-1">
           <Card className="h-full">
             <CardContent className="p-0 h-full relative">
+              {/* Realtime Indicator */}
+              <div className="realtime-indicator">
+                <div className="pulse-dot"></div>
+                <span>Live Updates</span>
+              </div>
+
               <div
                 ref={mapRef}
                 className="w-full h-full min-h-[600px] rounded-lg bg-gray-100"
@@ -369,6 +401,27 @@ export const GoogleMapView = () => {
                   height: "600px",
                 }}
               />
+
+              {/* Map Legend */}
+              <div className="map-legend">
+                <h4>Severity Levels</h4>
+                <div className="map-legend-item">
+                  <div className="map-legend-dot" style={{ backgroundColor: "#dc2626" }}></div>
+                  <span>Critical</span>
+                </div>
+                <div className="map-legend-item">
+                  <div className="map-legend-dot" style={{ backgroundColor: "#ef4444" }}></div>
+                  <span>High</span>
+                </div>
+                <div className="map-legend-item">
+                  <div className="map-legend-dot" style={{ backgroundColor: "#f59e0b" }}></div>
+                  <span>Medium</span>
+                </div>
+                <div className="map-legend-item">
+                  <div className="map-legend-dot" style={{ backgroundColor: "#10b981" }}></div>
+                  <span>Low</span>
+                </div>
+              </div>
 
               {(loading || error) && (
                 <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg">

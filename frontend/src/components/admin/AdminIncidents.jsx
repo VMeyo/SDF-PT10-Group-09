@@ -13,6 +13,7 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const [selectedIncident, setSelectedIncident] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -24,6 +25,30 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   useEffect(() => {
     applyFilters()
   }, [incidents, filters])
+
+  const fetchReporterData = async (userId) => {
+    if (reportersData[userId]) {
+      return reportersData[userId]
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReportersData((prev) => ({ ...prev, [userId]: userData }))
+        return userData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+    }
+    return null
+  }
 
   const fetchIncidents = async () => {
     try {
@@ -40,6 +65,9 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
           data.slice(0, 3).map((i) => ({ id: i.id, status: i.status, title: i.title })),
         )
         setIncidents(data)
+
+        const uniqueUserIds = [...new Set(data.map((i) => i.created_by || i.user_id).filter(Boolean))]
+        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
       } else {
         console.log("[v0] Admin fetch failed with status:", response.status)
       }
@@ -154,76 +182,83 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
       </div>
 
       <div className="space-y-4">
-        {filteredIncidents.map((incident) => (
-          <Card key={incident.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-2">{incident.title}</h3>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
-                    <span>📍 {incident.location}</span>
-                    <span>📅 {new Date(incident.created_at).toLocaleDateString()}</span>
-                    <span>👤 {incident.reporter_name || "Anonymous"}</span>
+        {filteredIncidents.map((incident) => {
+          const reporterId = incident.created_by || incident.user_id
+          const reporterInfo = reportersData[reporterId]
+          const reporterName =
+            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
+
+          return (
+            <Card key={incident.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-2">{incident.title}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
+                      <span>📍 {incident.location}</span>
+                      <span>📅 {new Date(incident.created_at).toLocaleDateString()}</span>
+                      <span>👤 {reporterName}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <span
+                      className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(incident.status)}`}
+                    >
+                      {incident.status?.replace("_", " ").toUpperCase()}
+                    </span>
+                    <span
+                      className={`px-3 py-1 text-xs font-medium rounded-full border ${getSeverityColor(incident.severity)}`}
+                    >
+                      {incident.severity?.toUpperCase()}
+                    </span>
                   </div>
                 </div>
-                <div className="flex flex-col space-y-2">
-                  <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(incident.status)}`}
-                  >
-                    {incident.status?.replace("_", " ").toUpperCase()}
-                  </span>
-                  <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full border ${getSeverityColor(incident.severity)}`}
-                  >
-                    {incident.severity?.toUpperCase()}
-                  </span>
-                </div>
-              </div>
 
-              <p className="text-muted-foreground mb-4 line-clamp-2">{incident.description}</p>
+                <p className="text-muted-foreground mb-4 line-clamp-2">{incident.description}</p>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-muted-foreground">
-                    Category: <span className="font-medium">{incident.category}</span>
-                  </span>
-                  <span className="text-sm text-muted-foreground">ID: #{incident.id}</span>
-                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-muted-foreground">
+                      Category: <span className="font-medium">{incident.category}</span>
+                    </span>
+                    <span className="text-sm text-muted-foreground">ID: #{incident.id}</span>
+                  </div>
 
-                <div className="flex items-center space-x-2">
-                  {incident.status !== "resolved" && (
-                    <>
-                      {incident.status === "pending" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateIncidentStatus(incident.id, "in_progress")}
-                          disabled={updating === incident.id}
-                        >
-                          {updating === incident.id ? "Updating..." : "Start Review"}
-                        </Button>
-                      )}
-                      {incident.status === "in_progress" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateIncidentStatus(incident.id, "resolved")}
-                          disabled={updating === incident.id}
-                          className="border-green-300 text-green-700 hover:bg-green-50"
-                        >
-                          {updating === incident.id ? "Updating..." : "Mark Resolved"}
-                        </Button>
-                      )}
-                    </>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setSelectedIncident(incident.id)}>
-                    View Details
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    {incident.status !== "resolved" && (
+                      <>
+                        {incident.status === "pending" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateIncidentStatus(incident.id, "in_progress")}
+                            disabled={updating === incident.id}
+                          >
+                            {updating === incident.id ? "Updating..." : "Start Review"}
+                          </Button>
+                        )}
+                        {incident.status === "in_progress" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateIncidentStatus(incident.id, "resolved")}
+                            disabled={updating === incident.id}
+                            className="border-green-300 text-green-700 hover:bg-green-50"
+                          >
+                            {updating === incident.id ? "Updating..." : "Mark Resolved"}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setSelectedIncident(incident.id)}>
+                      View Details
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {filteredIncidents.length === 0 && (
