@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "../ui/Card"
 import { Button } from "../ui/Button"
 import { IncidentFilters } from "../incidents/IncidentFilters"
@@ -11,12 +11,41 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
   const [filteredIncidents, setFilteredIncidents] = useState(incidents)
   const [editingIncident, setEditingIncident] = useState(null)
   const [deletingIncident, setDeletingIncident] = useState(null)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
-  // Update filtered incidents when incidents or filters change
-  useState(() => {
+  const fetchReporterData = async (userId) => {
+    if (reportersData[userId]) {
+      return reportersData[userId]
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setReportersData((prev) => ({ ...prev, [userId]: userData }))
+        return userData
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching reporter data:", error)
+    }
+    return null
+  }
+
+  useEffect(() => {
+    const uniqueUserIds = [...new Set(incidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
+    uniqueUserIds.forEach((userId) => fetchReporterData(userId))
+  }, [incidents])
+
+  useEffect(() => {
     let filtered = incidents
 
     if (filters.search) {
@@ -182,16 +211,30 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
   }
 
   const getTimeAgo = (dateString) => {
-    const now = new Date()
-    const reportDate = new Date(dateString)
-    const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
+    if (!dateString) return "Date not available"
 
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`
-    } else if (diffInMinutes < 1440) {
-      return `${Math.floor(diffInMinutes / 60)}h ago`
-    } else {
-      return `${Math.floor(diffInMinutes / 1440)}d ago`
+    try {
+      const reportDate = new Date(dateString)
+      if (isNaN(reportDate.getTime())) return "Invalid date"
+
+      const now = new Date()
+      const diffInMinutes = Math.floor((now - reportDate) / (1000 * 60))
+
+      if (diffInMinutes < 1) return "Just now"
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+
+      const diffInHours = Math.floor(diffInMinutes / 60)
+      if (diffInHours < 24) return `${diffInHours}h ago`
+
+      const diffInDays = Math.floor(diffInHours / 24)
+      if (diffInDays < 7) return `${diffInDays}d ago`
+
+      return reportDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    } catch (error) {
+      return "Date not available"
     }
   }
 
@@ -222,6 +265,10 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
       <div className="dashboard-reports-grid">
         {filteredIncidents.map((incident) => {
           const mediaCount = incident.media_count || incident.media?.length || 0
+          const reporterId = incident.created_by || incident.user_id
+          const reporterInfo = reportersData[reporterId]
+          const reporterName =
+            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
 
           return (
             <div key={incident.id} className="modern-report-card">
@@ -282,11 +329,9 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
 
                 <div className="reporter-section">
                   <div className="reporter-avatar">
-                    <span className="avatar-text">
-                      {(incident.reporter_name || incident.user?.name || "U").charAt(0).toUpperCase()}
-                    </span>
+                    <span className="avatar-text">{reporterName.charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="reporter-name">by {incident.reporter_name || incident.user?.name || "You"}</span>
+                  <span className="reporter-name">by {reporterName}</span>
                   <div className={`status-badge-small ${incident.status || "pending"}`}>
                     {incident.status === "resolved" ? "Verified" : "Responding"}
                   </div>

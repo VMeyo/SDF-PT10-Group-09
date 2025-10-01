@@ -9,6 +9,7 @@ import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
 export const ReportManagement = () => {
   const [reports, setReports] = useState([])
   const [filteredReports, setFilteredReports] = useState([])
+  const [users, setUsers] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [severityFilter, setSeverityFilter] = useState("all")
@@ -30,14 +31,51 @@ export const ReportManagement = () => {
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
-  useEffect(() => {
-    fetchReports()
-  }, [])
+  const tabs = ["Overview", "Reports", "Users", "Settings"]
 
   useEffect(() => {
-    applyFilters()
-    calculateStats()
-  }, [reports, searchTerm, statusFilter, severityFilter, categoryFilter, dateFilter])
+    fetchReports()
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
+      const response = await fetch(`${API_BASE}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const responseText = await response.text()
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (e) {
+          console.error("[v0] Failed to parse users JSON:", e)
+          return
+        }
+
+        let usersArray = []
+        if (Array.isArray(data)) {
+          usersArray = data
+        } else if (data.users && Array.isArray(data.users)) {
+          usersArray = data.users
+        } else if (data.data && Array.isArray(data.data)) {
+          usersArray = data.data
+        }
+
+        console.log("[v0] Users data received:", usersArray.length, "users")
+        setUsers(usersArray)
+      } else {
+        console.error("[v0] Failed to fetch users")
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching users:", error)
+    }
+  }
 
   const fetchReports = async () => {
     try {
@@ -267,6 +305,38 @@ export const ReportManagement = () => {
     fetchReports()
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Date not available"
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) {
+      return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`
+    } else {
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    }
+  }
+
+  const getUserName = (userId) => {
+    if (!userId) return "Anonymous Reporter"
+    const user = users.find((u) => u.id === userId)
+    return user?.name || user?.username || user?.email || `User #${userId}`
+  }
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -424,18 +494,19 @@ export const ReportManagement = () => {
                   {report.created_at && (
                     <div className="flex items-center gap-1">
                       <span>🕒</span>
-                      <span>
-                        {new Date(report.created_at).toLocaleDateString()}{" "}
-                        {new Date(report.created_at).toLocaleTimeString()}
-                      </span>
+                      <span>{formatDate(report.created_at)}</span>
                     </div>
                   )}
-                  <div>
-                    <span>by User #{report.created_by}</span>
+                  <div className="flex items-center gap-1">
+                    <span>👤</span>
+                    <span className="font-medium">{getUserName(report.created_by)}</span>
                   </div>
-                  {report.media && (
-                    <div>
-                      <span>{report.media.length} media files</span>
+                  {report.media && report.media.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span>📎</span>
+                      <span>
+                        {report.media.length} media file{report.media.length !== 1 ? "s" : ""}
+                      </span>
                     </div>
                   )}
                 </div>
