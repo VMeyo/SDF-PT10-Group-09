@@ -6,7 +6,6 @@ from flask_jwt_extended import (
     get_jwt_identity,
 )
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db, mail
 from app.models import User
 from flask_mail import Message
@@ -46,7 +45,7 @@ def signup():
         return jsonify({"msg": "Email already registered"}), 400
 
     user = User(name=name, email=email, phone=phone, role="user")
-    user.password = generate_password_hash(password)
+    user.password = password
     db.session.add(user)
     db.session.commit()
 
@@ -63,7 +62,7 @@ def login():
     password = data.get("password")
 
     user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password, password):
+    if not user or not user.check_password(password):
         return jsonify({"msg": "Invalid credentials"}), 401
 
     access_token = create_access_token(identity=str(user.id))
@@ -131,7 +130,7 @@ def forgot_password():
         subject="Password Reset Request",
         recipients=[email],
         body=f"Hi {user.name},\n\nClick the link to reset your password: {reset_url}\n\nIf you did not request this, ignore this email.",
-        sender=current_app.config["MAIL_DEFAULT_SENDER"]
+        sender=current_app.config["MAIL_DEFAULT_SENDER"]  # ✅ ensure sender is set
     )
     mail.send(msg)
     return jsonify({"msg": "Password reset email sent"}), 200
@@ -153,7 +152,7 @@ def password_reset(token):
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
-    user.password = generate_password_hash(new_password)
+    user.password = new_password
     db.session.commit()
     return jsonify({"msg": "Password updated successfully"}), 200
 
@@ -178,218 +177,6 @@ def promote_user(user_id):
     db.session.commit()
 
     return jsonify({"msg": f"User {user.email} promoted to admin"}), 200
-
-
-# ---------------------
-# Change password (Authenticated user)
-# ---------------------
-@auth_bp.route("/change-password", methods=["PUT"])
-@jwt_required()
-def change_password():
-    user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
-
-    if not user:
-        return jsonify({"msg": "User not found"}), 404
-
-    data = request.get_json()
-    current_password = data.get("current_password")
-    new_password = data.get("new_password")
-    confirm_new_password = data.get("confirm_new_password")
-
-    if new_password != confirm_new_password:
-        return jsonify({"msg": "New password and confirmation do not match"}), 400
-
-    if not check_password_hash(user.password, current_password):
-        return jsonify({"msg": "Incorrect current password"}), 401
-
-    user.password = generate_password_hash(new_password)
-    db.session.commit()
-
-    return jsonify({"msg": "Password changed successfully"}), 200
-
-
-
-
-# from flask import Blueprint, request, jsonify, current_app, url_for
-# from flask_jwt_extended import (
-#     create_access_token,
-#     create_refresh_token,
-#     jwt_required,
-#     get_jwt_identity,
-# )
-# from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-# from app.extensions import db, mail
-# from app.models import User
-# from flask_mail import Message
-
-# auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/v1/auth")
-
-
-# # ---------------------
-# # Token helpers
-# # ---------------------
-# def generate_token(email):
-#     s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
-#     return s.dumps(email, salt="password-reset-salt")
-
-
-# def verify_token(token, expiration=3600):
-#     s = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
-#     try:
-#         email = s.loads(token, salt="password-reset-salt", max_age=expiration)
-#         return email
-#     except (SignatureExpired, BadSignature):
-#         return None
-
-
-# # ---------------------
-# # Signup
-# # ---------------------
-# @auth_bp.route("/signup", methods=["POST"])
-# def signup():
-#     data = request.get_json()
-#     name = data.get("name")
-#     email = data.get("email")
-#     phone = data.get("phone")
-#     password = data.get("password")
-
-#     if User.query.filter_by(email=email).first():
-#         return jsonify({"msg": "Email already registered"}), 400
-
-#     user = User(name=name, email=email, phone=phone, role="user")
-#     user.password = password
-#     db.session.add(user)
-#     db.session.commit()
-
-#     return jsonify({"msg": "User registered successfully"}), 201
-
-
-# # ---------------------
-# # Login
-# # ---------------------
-# @auth_bp.route("/login", methods=["POST"])
-# def login():
-#     data = request.get_json()
-#     email = data.get("email")
-#     password = data.get("password")
-
-#     user = User.query.filter_by(email=email).first()
-#     if not user or not user.check_password(password):
-#         return jsonify({"msg": "Invalid credentials"}), 401
-
-#     access_token = create_access_token(identity=str(user.id))
-#     refresh_token = create_refresh_token(identity=str(user.id))
-
-#     return jsonify({
-#         "access_token": access_token,
-#         "refresh_token": refresh_token,
-#         "user": {
-#             "id": user.id,
-#             "name": user.name,
-#             "email": user.email,
-#             "role": user.role,
-#             "points": user.points
-#         }
-#     })
-
-
-# # ---------------------
-# # Current logged-in user
-# # ---------------------
-# @auth_bp.route("/me", methods=["GET"])
-# @jwt_required()
-# def me():
-#     user_id = int(get_jwt_identity())
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"msg": "User not found"}), 404
-
-#     return jsonify({
-#         "id": user.id,
-#         "name": user.name,
-#         "email": user.email,
-#         "role": user.role,
-#         "points": user.points
-#     })
-
-
-# # ---------------------
-# # Refresh token
-# # ---------------------
-# @auth_bp.route("/refresh", methods=["POST"])
-# @jwt_required(refresh=True)
-# def refresh():
-#     user_id = int(get_jwt_identity())
-#     access_token = create_access_token(identity=str(user_id))
-#     return jsonify({"access_token": access_token})
-
-
-# # ---------------------
-# # Password reset request
-# # ---------------------
-# @auth_bp.route("/forgot-password", methods=["POST"])
-# def forgot_password():
-#     data = request.get_json()
-#     email = data.get("email")
-#     user = User.query.filter_by(email=email).first()
-#     if not user:
-#         return jsonify({"msg": "Email not registered"}), 404
-
-#     token = generate_token(email)
-#     reset_url = url_for("auth_bp.password_reset", token=token, _external=True)
-
-#     msg = Message(
-#         subject="Password Reset Request",
-#         recipients=[email],
-#         body=f"Hi {user.name},\n\nClick the link to reset your password: {reset_url}\n\nIf you did not request this, ignore this email.",
-#         sender=current_app.config["MAIL_DEFAULT_SENDER"]  # ✅ ensure sender is set
-#     )
-#     mail.send(msg)
-#     return jsonify({"msg": "Password reset email sent"}), 200
-
-
-# # ---------------------
-# # Password reset
-# # ---------------------
-# @auth_bp.route("/reset-password/<token>", methods=["POST"])
-# def password_reset(token):
-#     data = request.get_json()
-#     new_password = data.get("password")
-
-#     email = verify_token(token)
-#     if not email:
-#         return jsonify({"msg": "Invalid or expired token"}), 400
-
-#     user = User.query.filter_by(email=email).first()
-#     if not user:
-#         return jsonify({"msg": "User not found"}), 404
-
-#     user.password = new_password
-#     db.session.commit()
-#     return jsonify({"msg": "Password updated successfully"}), 200
-
-
-# # ---------------------
-# # Promote user (Admin only)
-# # ---------------------
-# @auth_bp.route("/users/<int:user_id>/promote", methods=["PUT"])
-# @jwt_required()
-# def promote_user(user_id):
-#     current_user_id = int(get_jwt_identity())
-#     current_user = User.query.get(current_user_id)
-
-#     if current_user.role != "admin":
-#         return jsonify({"msg": "Admins only"}), 403
-
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({"msg": "User not found"}), 404
-
-#     user.role = "admin"
-#     db.session.commit()
-
-#     return jsonify({"msg": f"User {user.email} promoted to admin"}), 200
 
 
 
