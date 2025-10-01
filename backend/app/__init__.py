@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask, request
+from flask import Flask
 from flask_cors import CORS
 from .config import Config
 from .extensions import db, migrate, jwt, mail
@@ -17,49 +17,44 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # -----------------------------
-    # CORS Configuration
-    # -----------------------------
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": [
-            "http://127.0.0.1:5173",
-            "http://localhost:5173",
-            "https://sdf-pt-10-group-09.vercel.app"
-        ]}},
-        supports_credentials=True,
-        allow_headers=["Content-Type", "Authorization"],
-        expose_headers=["Content-Type", "Authorization"]
-    )
+    # ----------------------------
+    # CORS configuration
+    # ----------------------------
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "http://127.0.0.1:5173",
+                "http://localhost:5173",
+                "https://sdf-pt-10-group-09.vercel.app"
+            ],
+            "supports_credentials": True,
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"]
+        }
+    })
 
-    # -----------------------------
-    # Allow OPTIONS preflight for all routes
-    # -----------------------------
-    @app.before_request
-    def handle_options():
-        if request.method == "OPTIONS":
-            return '', 200
-
-    # -----------------------------
+    # ----------------------------
     # Initialize extensions
-    # -----------------------------
+    # ----------------------------
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
 
-    # -----------------------------
+    # ----------------------------
     # Register Blueprints
-    # -----------------------------
-    app.register_blueprint(auth_bp, url_prefix='/api/v1')
-    app.register_blueprint(users_bp, url_prefix='/api/v1')
-    app.register_blueprint(incidents_bp, url_prefix='/api/v1')
-    app.register_blueprint(media_bp, url_prefix='/api/v1')
-    app.register_blueprint(comments_bp, url_prefix='/api/v1')
-    app.register_blueprint(admin_bp, url_prefix='/api/v1')
-    app.register_blueprint(migrate_bp, url_prefix='/api/v1')
+    # ----------------------------
+    app.register_blueprint(auth_bp)       # url_prefix already set in blueprint
+    app.register_blueprint(users_bp)
+    app.register_blueprint(incidents_bp)
+    app.register_blueprint(media_bp)
+    app.register_blueprint(comments_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(migrate_bp)
 
     return app
+
 
 
 
