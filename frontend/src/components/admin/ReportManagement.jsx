@@ -220,6 +220,15 @@ export const ReportManagement = () => {
           report.id === reportId ? { ...report, status: newStatus } : report,
         )
         setReports(updatedReports)
+
+        if (newStatus === "resolved" || newStatus === "approved") {
+          const report = reports.find((r) => r.id === reportId)
+          if (report) {
+            const reporterId = report.created_by || report.user_id
+            await awardPointsToUser(reporterId, reportId)
+          }
+        }
+
         alert(`Report status updated to ${newStatus}`)
       } else {
         const errorData = await response.json().catch(() => ({}))
@@ -342,6 +351,32 @@ export const ReportManagement = () => {
     if (!userId) return "Unknown User"
     const user = users.find((u) => u.id === userId)
     return user?.name || user?.username || user?.email || `User #${userId}`
+  }
+
+  const awardPointsToUser = async (userId, reportId) => {
+    try {
+      console.log("[v0] Awarding points to user:", userId, "for report:", reportId)
+      const response = await fetch(`${API_BASE}/users/${userId}/points`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          points: 10,
+          reason: `Report #${reportId} approved`,
+          incident_id: reportId,
+        }),
+      })
+
+      if (response.ok) {
+        console.log("[v0] Points awarded successfully")
+      } else {
+        console.error("[v0] Failed to award points")
+      }
+    } catch (error) {
+      console.error("[v0] Error awarding points:", error)
+    }
   }
 
   if (loading) {

@@ -275,9 +275,31 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
           const canEdit = isOwner && incident.status !== "resolved"
           const canDelete = isOwner
 
+          const mediaArray = incident.media || []
+          const firstImage = mediaArray.find(
+            (m) => m.file_type?.startsWith("image/") || m.file_url?.match(/\.(jpg|jpeg|png|gif)$/i),
+          )
+          const remainingMedia = mediaArray.filter((m) => m !== firstImage).slice(0, 3)
+
           return (
             <div key={incident.id} className="modern-report-card">
-              <div className={`modern-card-header ${getGradientClass(incident.severity)}`}>
+              <div
+                className={`modern-card-header ${getGradientClass(incident.severity)}`}
+                style={
+                  firstImage
+                    ? {
+                        backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${
+                          firstImage.file_url?.startsWith("http")
+                            ? firstImage.file_url
+                            : `${API_BASE.replace("/api/v1", "")}${firstImage.file_url}`
+                        })`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                      }
+                    : {}
+                }
+              >
                 <div className="header-top">
                   <div className="status-indicator">
                     <div className={`status-dot ${incident.severity || "medium"}`}></div>
@@ -288,6 +310,84 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
                       </div>
                     )}
                   </div>
+                  {remainingMedia.length > 0 && (
+                    <div
+                      className="header-media-circles"
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center",
+                      }}
+                    >
+                      {remainingMedia.map((media, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            border: "2px solid white",
+                            backgroundColor: "#f3f4f6",
+                          }}
+                        >
+                          {media.file_type?.startsWith("image/") || media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                            <img
+                              src={
+                                media.file_url?.startsWith("http")
+                                  ? media.file_url
+                                  : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                              }
+                              alt={`Media ${idx + 1}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = "none"
+                                e.target.parentElement.innerHTML =
+                                  '<div style="width:100%;height:100%;display:flex;alignItems:center;justifyContent:center;fontSize:16px">📷</div>'
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "16px",
+                              }}
+                            >
+                              📎
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {mediaArray.length > 4 && (
+                        <div
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            border: "2px solid white",
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "12px",
+                            fontWeight: "bold",
+                            color: "#333",
+                          }}
+                        >
+                          +{mediaArray.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="header-center">
                     <div className="star-icon">⭐</div>
                     <div className="media-count-text">{mediaCount} media files</div>

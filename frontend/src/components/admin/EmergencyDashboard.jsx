@@ -328,10 +328,31 @@ export const EmergencyDashboard = () => {
               const reporterName =
                 reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Unknown User"
 
+              const mediaArray = report.media || []
+              const firstImage = mediaArray.find(
+                (m) => m.file_type?.startsWith("image/") || m.file_url?.match(/\.(jpg|jpeg|png|gif)$/i),
+              )
+              const remainingMedia = mediaArray.filter((m) => m !== firstImage).slice(0, 3)
+
               return (
                 <div key={report.id} className={`modern-report-card ${getGradientClass(report.severity)}`}>
-                  {/* Card Header with gradient background */}
-                  <div className="modern-card-header">
+                  <div
+                    className="modern-card-header"
+                    style={
+                      firstImage
+                        ? {
+                            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${
+                              firstImage.file_url?.startsWith("http")
+                                ? firstImage.file_url
+                                : `${API_BASE.replace("/api/v1", "")}${firstImage.file_url}`
+                            })`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                          }
+                        : {}
+                    }
+                  >
                     <div className="header-top">
                       <div className={`status-dot ${getStatusDotColor(report.status)}`}></div>
                       {report.verified && (
@@ -340,10 +361,27 @@ export const EmergencyDashboard = () => {
                           <span>Verified</span>
                         </div>
                       )}
-                      {report.media && report.media.length > 0 && (
-                        <div className="header-media-section">
-                          {report.media.slice(0, 2).map((media, idx) => (
-                            <div key={idx} className="header-media-thumb">
+                      {remainingMedia.length > 0 && (
+                        <div
+                          className="header-media-circles"
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                          }}
+                        >
+                          {remainingMedia.map((media, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                overflow: "hidden",
+                                border: "2px solid white",
+                                backgroundColor: "#f3f4f6",
+                              }}
+                            >
                               {media.file_type?.startsWith("image/") ||
                               media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                                 <img
@@ -352,38 +390,54 @@ export const EmergencyDashboard = () => {
                                       ? media.file_url
                                       : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
                                   }
-                                  alt={`Evidence ${idx + 1}`}
+                                  alt={`Media ${idx + 1}`}
                                   style={{
-                                    width: "50px",
-                                    height: "50px",
+                                    width: "100%",
+                                    height: "100%",
                                     objectFit: "cover",
-                                    borderRadius: "6px",
                                     display: "block",
                                   }}
                                   onError={(e) => {
-                                    console.error("[v0] Image load error:", media.file_url)
                                     e.target.style.display = "none"
                                     e.target.parentElement.innerHTML =
-                                      '<div style="width:50px;height:50px;background:#f3f4f6;borderRadius:6px;display:flex;alignItems:center;justifyContent:center"><span>📷</span></div>'
+                                      '<div style="width:100%;height:100%;display:flex;alignItems:center;justifyContent:center;fontSize:16px">📷</div>'
                                   }}
                                 />
                               ) : (
                                 <div
                                   style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    background: "#f3f4f6",
-                                    borderRadius: "6px",
+                                    width: "100%",
+                                    height: "100%",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
+                                    fontSize: "16px",
                                   }}
                                 >
-                                  <span>📎</span>
+                                  📎
                                 </div>
                               )}
                             </div>
                           ))}
+                          {mediaArray.length > 4 && (
+                            <div
+                              style={{
+                                width: "40px",
+                                height: "40px",
+                                borderRadius: "50%",
+                                border: "2px solid white",
+                                backgroundColor: "rgba(255,255,255,0.9)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "12px",
+                                fontWeight: "bold",
+                                color: "#333",
+                              }}
+                            >
+                              +{mediaArray.length - 4}
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="star-section">
