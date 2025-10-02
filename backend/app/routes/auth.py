@@ -222,7 +222,30 @@ def promote_user(user_id):
 
     return jsonify({"msg": f"User {user.email} promoted to admin"}), 200
 
+# ---------------------
+# Change password (Authenticated user)
+# ---------------------
+@auth_bp.route("/change-password", methods=["PUT"])
+@jwt_required()
+def change_password():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
 
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
 
+    data = request.get_json()
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    confirm_new_password = data.get("confirm_new_password")
 
+    if new_password != confirm_new_password:
+        return jsonify({"msg": "New password and confirmation do not match"}), 400
 
+    if not check_password_hash(user.password_hash, current_password):
+        return jsonify({"msg": "Incorrect current password"}), 401
+
+    user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({"msg": "Password changed successfully"}), 200
