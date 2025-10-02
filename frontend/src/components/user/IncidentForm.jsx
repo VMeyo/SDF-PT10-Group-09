@@ -77,12 +77,12 @@ export const IncidentForm = ({ onIncidentCreated }) => {
       const file = files[i]
       const formData = new FormData()
       formData.append("file", file)
-      formData.append("incident_id", incidentId)
 
       try {
         setUploadProgress((prev) => ({ ...prev, [i]: 0 }))
 
-        const response = await fetch(`${API_BASE}/media/upload`, {
+        console.log("[v0] Uploading file for incident:", incidentId, "File:", file.name)
+        const response = await fetch(`${API_BASE}/media/${incidentId}/upload`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -92,11 +92,14 @@ export const IncidentForm = ({ onIncidentCreated }) => {
 
         if (response.ok) {
           const data = await response.json()
+          console.log("[v0] Upload successful:", data)
           uploadedUrls.push(data.file_url)
           setUploadProgress((prev) => ({ ...prev, [i]: 100 }))
+        } else {
+          console.error("[v0] Upload failed for file:", file.name, "Status:", response.status)
         }
       } catch (error) {
-        console.error("Upload failed:", error)
+        console.error("[v0] Upload error for file:", file.name, error)
       }
     }
 

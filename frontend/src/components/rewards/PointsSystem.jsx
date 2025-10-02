@@ -21,7 +21,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
 
   const fetchUserPoints = async () => {
     try {
-      const response = await fetch(`${API_BASE}/users/points`, {
+      const response = await fetch(`${API_BASE}/users/points/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 

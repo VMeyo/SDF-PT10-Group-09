@@ -28,7 +28,7 @@ export const AdminDashboard = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
+      const response = await fetch(`${API_BASE}/auth/me/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

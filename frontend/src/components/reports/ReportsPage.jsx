@@ -117,7 +117,7 @@ export const ReportsPage = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch(`${API_BASE}/incidents`, {
+      const response = await fetch(`${API_BASE}/incidents/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -684,7 +684,7 @@ export const ReportsPage = () => {
               report.reporter_name ||
               user?.name ||
               user?.username ||
-              "Anonymous Reporter"
+              "Unknown User"
 
             console.log("[v0] Report", report.id, "reporter:", reporterName, "from data:", reporterInfo)
 
@@ -728,9 +728,10 @@ export const ReportsPage = () => {
                   {mediaFiles.length > 0 ? (
                     <div className="media-preview-section">
                       <div className="media-preview-grid">
-                        {mediaFiles.slice(0, 3).map((media, index) => (
+                        {mediaFiles.slice(0, 2).map((media, index) => (
                           <div key={media.id || index} className="media-preview-item">
-                            {media.file_type?.startsWith("image/") ? (
+                            {media.file_type?.startsWith("image/") ||
+                            media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                               <img
                                 src={
                                   media.file_url?.startsWith("http")
@@ -741,10 +742,10 @@ export const ReportsPage = () => {
                                 className="media-preview-image"
                                 onError={(e) => {
                                   console.error("[v0] Failed to load image:", media.file_url)
-                                  e.target.src = "/incident-scene.png"
+                                  e.target.src = "/incident-evidence.jpg"
                                 }}
                               />
-                            ) : media.file_type?.startsWith("video/") ? (
+                            ) : media.file_type?.startsWith("video/") || media.file_url?.match(/\.(mp4|mov|avi)$/i) ? (
                               <video
                                 src={
                                   media.file_url?.startsWith("http")
@@ -761,7 +762,7 @@ export const ReportsPage = () => {
                             )}
                           </div>
                         ))}
-                        {mediaFiles.length > 3 && <div className="media-preview-more">+{mediaFiles.length - 3}</div>}
+                        {mediaFiles.length > 2 && <div className="media-preview-more">+{mediaFiles.length - 2}</div>}
                       </div>
                       <div className="media-count-badge">
                         <svg className="star-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

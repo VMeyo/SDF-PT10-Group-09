@@ -2,6 +2,7 @@ export const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
 
 console.log("[v0] API_BASE configured as:", API_BASE)
 console.log("[v0] Environment mode:", import.meta.env.MODE)
+console.log("[v0] Full API URL will be:", window.location.origin + API_BASE)
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem("token")
@@ -36,14 +37,14 @@ export const apiRequest = async (endpoint, options = {}) => {
 
 export const incidentAPI = {
   // Get all incidents
-  getAll: () => apiRequest("/incidents"),
+  getAll: () => apiRequest("/incidents/"),
 
   // Get single incident
   getById: (id) => apiRequest(`/incidents/${id}`),
 
   // Create new incident
   create: (data) =>
-    apiRequest("/incidents", {
+    apiRequest("/incidents/", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -115,8 +116,18 @@ export const authAPI = {
   me: () => apiRequest("/auth/me"),
 
   promote: (userId) =>
-    apiRequest(`/auth/promote/${userId}`, {
-      method: "PATCH",
+    apiRequest(`/auth/users/${userId}/promote`, {
+      method: "PUT",
+    }),
+
+  changePassword: (currentPassword, newPassword, confirmNewPassword) =>
+    apiRequest("/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_new_password: confirmNewPassword,
+      }),
     }),
 }
 
@@ -124,9 +135,8 @@ export const mediaAPI = {
   upload: (file, incidentId) => {
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("incident_id", incidentId)
 
-    return apiRequest(`/media/upload`, {
+    return apiRequest(`/media/${incidentId}/upload`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -139,16 +149,18 @@ export const mediaAPI = {
     apiRequest(`/media/${mediaId}`, {
       method: "DELETE",
     }),
+
+  getByIncident: (incidentId) => apiRequest(`/media/incident/${incidentId}`),
 }
 
 export const adminAPI = {
   getIncidents: (status = null) => {
-    const endpoint = status ? `/incidents?status=${status}` : "/incidents"
+    const endpoint = status ? `/admin/incidents?status=${status}` : "/admin/incidents"
     return apiRequest(endpoint)
   },
 
   updateIncidentStatus: (id, status) =>
-    apiRequest(`/incidents/${id}/status`, {
+    apiRequest(`/admin/incidents/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
