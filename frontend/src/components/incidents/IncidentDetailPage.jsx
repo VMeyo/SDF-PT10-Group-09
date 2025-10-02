@@ -314,7 +314,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
     setUpdating(true)
     try {
       console.log("[v0] Updating incident status to:", newStatus)
-      const response = await fetch(`${API_BASE}/incidents/${incidentId}/status`, {
+      const response = await fetch(`${API_BASE}/admin/incidents/${incidentId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -38,10 +38,17 @@ export const ReportManagement = () => {
     fetchUsers()
   }, [])
 
+  useEffect(() => {
+    if (reports.length > 0) {
+      calculateStats()
+      applyFilters()
+    }
+  }, [reports, searchTerm, statusFilter, severityFilter, categoryFilter, dateFilter])
+
   const fetchUsers = async () => {
     try {
-      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
-      const response = await fetch(`${API_BASE}/users`, {
+      console.log("[v0] Fetching users from:", `${API_BASE}/users/`)
+      const response = await fetch(`${API_BASE}/users/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -79,10 +86,10 @@ export const ReportManagement = () => {
 
   const fetchReports = async () => {
     try {
-      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
+      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents/`)
       console.log("[v0] Using token:", token ? "Token present" : "No token")
 
-      const response = await fetch(`${API_BASE}/incidents`, {
+      const response = await fetch(`${API_BASE}/incidents/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -198,7 +205,7 @@ export const ReportManagement = () => {
     setUpdating(reportId)
     try {
       console.log("[v0] Updating report status:", reportId, "to", newStatus)
-      const response = await fetch(`${API_BASE}/incidents/${reportId}/status`, {
+      const response = await fetch(`${API_BASE}/admin/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -332,7 +339,7 @@ export const ReportManagement = () => {
   }
 
   const getUserName = (userId) => {
-    if (!userId) return "Anonymous Reporter"
+    if (!userId) return "Unknown User"
     const user = users.find((u) => u.id === userId)
     return user?.name || user?.username || user?.email || `User #${userId}`
   }
@@ -499,7 +506,7 @@ export const ReportManagement = () => {
                   )}
                   <div className="flex items-center gap-1">
                     <span>👤</span>
-                    <span className="font-medium">{getUserName(report.created_by)}</span>
+                    <span className="font-medium">{getUserName(report.created_by || report.user_id)}</span>
                   </div>
                   {report.media && report.media.length > 0 && (
                     <div className="flex items-center gap-1">

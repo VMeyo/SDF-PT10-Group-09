@@ -34,8 +34,8 @@ export const AdminControlPanel = () => {
 
       // Stats will be calculated from the actual data we fetch
 
-      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
-      const usersResponse = await fetch(`${API_BASE}/users`, {
+      console.log("[v0] Fetching users from:", `${API_BASE}/users/`)
+      const usersResponse = await fetch(`${API_BASE}/users/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -77,8 +77,8 @@ export const AdminControlPanel = () => {
         setUsers([])
       }
 
-      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents`)
-      const reportsResponse = await fetch(`${API_BASE}/incidents`, {
+      console.log("[v0] Fetching reports from:", `${API_BASE}/incidents/`)
+      const reportsResponse = await fetch(`${API_BASE}/incidents/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

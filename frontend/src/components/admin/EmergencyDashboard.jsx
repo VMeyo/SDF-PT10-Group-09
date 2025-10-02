@@ -326,7 +326,7 @@ export const EmergencyDashboard = () => {
               const reporterId = report.created_by || report.user_id
               const reporterInfo = reportersData[reporterId]
               const reporterName =
-                reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Anonymous Reporter"
+                reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Unknown User"
 
               return (
                 <div key={report.id} className={`modern-report-card ${getGradientClass(report.severity)}`}>
@@ -340,9 +340,55 @@ export const EmergencyDashboard = () => {
                           <span>Verified</span>
                         </div>
                       )}
+                      {report.media && report.media.length > 0 && (
+                        <div className="header-media-section">
+                          {report.media.slice(0, 2).map((media, idx) => (
+                            <div key={idx} className="header-media-thumb">
+                              {media.file_type?.startsWith("image/") ||
+                              media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                <img
+                                  src={
+                                    media.file_url?.startsWith("http")
+                                      ? media.file_url
+                                      : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                                  }
+                                  alt={`Evidence ${idx + 1}`}
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    objectFit: "cover",
+                                    borderRadius: "6px",
+                                    display: "block",
+                                  }}
+                                  onError={(e) => {
+                                    console.error("[v0] Image load error:", media.file_url)
+                                    e.target.style.display = "none"
+                                    e.target.parentElement.innerHTML =
+                                      '<div style="width:50px;height:50px;background:#f3f4f6;borderRadius:6px;display:flex;alignItems:center;justifyContent:center"><span>📷</span></div>'
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    background: "#f3f4f6",
+                                    borderRadius: "6px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <span>📎</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="star-section">
                         <div className="star-icon">⭐</div>
-                        <div className="media-count">{report.media_count || 0} media files</div>
+                        <div className="media-count">{report.media_count || report.media?.length || 0} media files</div>
                       </div>
                     </div>
                     <div className="header-bottom">

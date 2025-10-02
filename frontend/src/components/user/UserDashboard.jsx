@@ -92,7 +92,7 @@ export const UserDashboard = () => {
       }
 
       const [incidentsRes, allIncidentsRes, pointsRes] = await Promise.all([
-        fetch(`${API_BASE}/incidents`, {
+        fetch(`${API_BASE}/incidents/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -101,7 +101,7 @@ export const UserDashboard = () => {
           console.error("[v0] Error fetching user incidents:", err)
           return { ok: false, status: 422 }
         }),
-        fetch(`${API_BASE}/incidents`, {
+        fetch(`${API_BASE}/incidents/`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -147,7 +147,9 @@ export const UserDashboard = () => {
       let allIncidents = []
       if (allIncidentsRes.ok) {
         allIncidents = await allIncidentsRes.json()
-        const uniqueUserIds = [...new Set(allIncidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
+        const uniqueUserIds = [...new Set(allIncidents.map((i) => i.created_by || i.user_id).filter(Boolean))].filter(
+          (userId) => userId !== currentUserId,
+        )
         uniqueUserIds.forEach((userId) => fetchReporterData(userId))
       } else {
         console.log("[v0] Failed to fetch all incidents, using empty array")
@@ -540,10 +542,7 @@ export const UserDashboard = () => {
                             const reporterId = report.created_by || report.user_id
                             const reporterInfo = reportersData[reporterId]
                             const reporterName =
-                              reporterInfo?.name ||
-                              reporterInfo?.username ||
-                              report.reporter_name ||
-                              "Anonymous Reporter"
+                              reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Unknown User"
 
                             return (
                               <div key={report.id} className="modern-report-card">
@@ -558,6 +557,52 @@ export const UserDashboard = () => {
                                         </div>
                                       )}
                                     </div>
+                                    {report.media && report.media.length > 0 ? (
+                                      <div className="header-media-preview">
+                                        {report.media.slice(0, 2).map((media, idx) => (
+                                          <div key={idx} className="header-media-item">
+                                            {media.file_type?.startsWith("image/") ||
+                                            media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                              <img
+                                                src={
+                                                  media.file_url?.startsWith("http")
+                                                    ? media.file_url
+                                                    : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
+                                                }
+                                                alt={`Evidence ${idx + 1}`}
+                                                style={{
+                                                  width: "60px",
+                                                  height: "60px",
+                                                  objectFit: "cover",
+                                                  borderRadius: "8px",
+                                                  display: "block",
+                                                }}
+                                                onError={(e) => {
+                                                  console.error("[v0] Image load error:", media.file_url)
+                                                  e.target.style.display = "none"
+                                                  e.target.parentElement.innerHTML =
+                                                    '<div style="width:60px;height:60px;background:#f3f4f6;borderRadius:8px;display:flex;alignItems:center;justifyContent:center"><span>📷</span></div>'
+                                                }}
+                                              />
+                                            ) : (
+                                              <div
+                                                style={{
+                                                  width: "60px",
+                                                  height: "60px",
+                                                  background: "#f3f4f6",
+                                                  borderRadius: "8px",
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  justifyContent: "center",
+                                                }}
+                                              >
+                                                <span>📎</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : null}
                                     <div className="header-center">
                                       <div className="star-icon">⭐</div>
                                       <div className="media-count-text">{mediaCount} media files</div>

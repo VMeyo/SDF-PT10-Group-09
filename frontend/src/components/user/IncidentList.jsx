@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "../../contexts/AuthContext"
 import { Card, CardContent } from "../ui/Card"
 import { Button } from "../ui/Button"
 import { IncidentFilters } from "../incidents/IncidentFilters"
 import "./IncidentList.css"
 
 export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onIncidentDeleted }) => {
+  const { user } = useAuth()
   const [filters, setFilters] = useState({})
   const [filteredIncidents, setFilteredIncidents] = useState(incidents)
   const [editingIncident, setEditingIncident] = useState(null)
@@ -267,8 +269,11 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
           const mediaCount = incident.media_count || incident.media?.length || 0
           const reporterId = incident.created_by || incident.user_id
           const reporterInfo = reportersData[reporterId]
-          const reporterName =
-            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
+          const reporterName = reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Unknown User"
+
+          const isOwner = String(reporterId) === String(user?.id)
+          const canEdit = isOwner && incident.status !== "resolved"
+          const canDelete = isOwner
 
           return (
             <div key={incident.id} className="modern-report-card">
@@ -354,27 +359,31 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
                       <span className="mr-1">👁️</span>
                       View Details
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditIncident(incident)}
-                      className="edit-button"
-                      disabled={incident.status === "resolved"}
-                    >
-                      <span className="mr-1">✏️</span>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteIncident(incident.id)}
-                      className="delete-button"
-                      disabled={deletingIncident === incident.id}
-                      style={{ color: "#dc2626", borderColor: "#fecaca" }}
-                    >
-                      <span className="mr-1">{deletingIncident === incident.id ? "⏳" : "🗑️"}</span>
-                      {deletingIncident === incident.id ? "Deleting..." : "Delete"}
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditIncident(incident)}
+                        className="edit-button"
+                        disabled={incident.status === "resolved"}
+                      >
+                        <span className="mr-1">✏️</span>
+                        Edit
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteIncident(incident.id)}
+                        className="delete-button"
+                        disabled={deletingIncident === incident.id}
+                        style={{ color: "#dc2626", borderColor: "#fecaca" }}
+                      >
+                        <span className="mr-1">{deletingIncident === incident.id ? "⏳" : "🗑️"}</span>
+                        {deletingIncident === incident.id ? "Deleting..." : "Delete"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

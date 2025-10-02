@@ -145,7 +145,7 @@ export const StatusManagement = () => {
   const updateReportStatus = async (reportId, newStatus, notes, assignedTo, priority, estimatedResolution) => {
     setUpdating(true)
     try {
-      const response = await fetch(`${API_BASE}/admin/reports/${reportId}/status`, {
+      const response = await fetch(`${API_BASE}/admin/incidents/${reportId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

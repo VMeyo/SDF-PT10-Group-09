@@ -42,10 +42,10 @@ export const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      console.log("[v0] Fetching users from:", `${API_BASE}/users`)
+      console.log("[v0] Fetching users from:", `${API_BASE}/users/`)
       console.log("[v0] Using token:", token ? "Token present" : "No token")
 
-      const response = await fetch(`${API_BASE}/users`, {
+      const response = await fetch(`${API_BASE}/users/`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
