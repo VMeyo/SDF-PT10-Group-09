@@ -8,11 +8,11 @@ class User(db.Model):
     name = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(20), unique=True, nullable=False)
-    role = db.Column(db.String(20), default="user")   # admin/user
+    role = db.Column(db.String(20), default="user")  # admin/user
     points = db.Column(db.Integer, default=0)
     password_hash = db.Column(db.String(200), nullable=False)
     
-    # ✅ ADD THESE TWO NEW FIELDS FOR SECURITY QUESTIONS
+    # Security question fields for password reset
     security_question = db.Column(db.String(255), nullable=True)
     security_answer_hash = db.Column(db.String(255), nullable=True)
 
@@ -20,9 +20,9 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    incidents = db.relationship("Incident", backref="user", lazy=True)
-    comments = db.relationship("Comment", backref="user", lazy=True)
-    media = db.relationship("Media", backref="user", lazy=True)
+    incidents = db.relationship("Incident", backref="user", lazy=True, cascade="all, delete-orphan")
+    comments = db.relationship("Comment", backref="user", lazy=True, cascade="all, delete-orphan")
+    media = db.relationship("Media", backref="user", lazy=True, cascade="all, delete-orphan")
 
     @property
     def password(self):
@@ -35,6 +35,43 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+class Incident(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(50), default="pending")  # pending, investigating, resolved, rejected
+    created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    comments = db.relationship("Comment", backref="incident", lazy=True, cascade="all, delete-orphan")
+    media = db.relationship("Media", backref="incident", lazy=True, cascade="all, delete-orphan")
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    incident_id = db.Column(db.Integer, db.ForeignKey("incident.id"), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Media(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    file_url = db.Column(db.String(255), nullable=False)
+    incident_id = db.Column(db.Integer, db.ForeignKey("incident.id"), nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 
