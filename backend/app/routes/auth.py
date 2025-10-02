@@ -40,10 +40,13 @@ def signup():
     email = data.get("email")
     phone = data.get("phone")
     password = data.get("password")
+    security_question = data.get("security_question")
+    security_answer = data.get("security_answer")
 
     if User.query.filter_by(email=email).first():
         return jsonify({"msg": "Email already registered"}), 400
 
+    # Security question is optional but recommended
     user = User(name=name, email=email, phone=phone, role="user")
     user.password = password
     db.session.add(user)
@@ -112,13 +115,18 @@ def refresh():
     return jsonify({"access_token": access_token})
 
 
+# Email-based password reset removed - using security questions only
+
+
 # ---------------------
-# Password reset request
+# Get security question (for password reset)
+# POST /api/v1/auth/security-question
 # ---------------------
-@auth_bp.route("/forgot-password", methods=["POST"])
-def forgot_password():
+@auth_bp.route("/security-question", methods=["POST"])
+def get_security_question():
     data = request.get_json()
     email = data.get("email")
+    
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"msg": "Email not registered"}), 404
@@ -137,24 +145,60 @@ def forgot_password():
 
 
 # ---------------------
-# Password reset
+# Verify security answer and reset password
+# POST /api/v1/auth/reset-password-security
 # ---------------------
-@auth_bp.route("/reset-password/<token>", methods=["POST"])
-def password_reset(token):
+@auth_bp.route("/reset-password-security", methods=["POST"])
+def reset_password_security():
     data = request.get_json()
-    new_password = data.get("password")
-
-    email = verify_token(token)
-    if not email:
-        return jsonify({"msg": "Invalid or expired token"}), 400
-
+    email = data.get("email")
+    security_answer = data.get("security_answer")
+    new_password = data.get("new_password")
+    
+    if not all([email, security_answer, new_password]):
+        return jsonify({"msg": "Email, security answer, and new password are required"}), 400
+    
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
     user.password = new_password
     db.session.commit()
-    return jsonify({"msg": "Password updated successfully"}), 200
+    
+    return jsonify({"msg": "Password reset successfully"}), 200
+
+
+# ---------------------
+# Update security question (Authenticated user)
+# PUT /api/v1/auth/security-question
+# ---------------------
+@auth_bp.route("/security-question", methods=["PUT"])
+@jwt_required()
+def update_security_question():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+    
+    data = request.get_json()
+    security_question = data.get("security_question")
+    security_answer = data.get("security_answer")
+    current_password = data.get("current_password")
+    
+    if not all([security_question, security_answer, current_password]):
+        return jsonify({"msg": "Security question, answer, and current password are required"}), 400
+    
+    # Verify current password
+    if not check_password_hash(user.password, current_password):
+        return jsonify({"msg": "Incorrect current password"}), 401
+    
+    # Update security question and answer
+    user.security_question = security_question
+    user.security_answer = generate_password_hash(security_answer.lower().strip())
+    db.session.commit()
+    
+    return jsonify({"msg": "Security question updated successfully"}), 200
 
 
 # ---------------------
