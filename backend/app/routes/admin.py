@@ -81,6 +81,18 @@ def update_incident_status(id):
 
     return jsonify({"msg": f"Incident status updated to {new_status}"})
 
+# ---------------------
+# Admin: Delete any user's incident
+# DELETE /api/v1/admin/incidents/<id>
+# ---------------------
+@admin_bp.route("/incidents/<int:id>", methods=["DELETE"], strict_slashes=False)
+@admin_required
+def delete_user_incident(id):
+    incident = Incident.query.get_or_404(id)
+    db.session.delete(incident)
+    db.session.commit()
+    return jsonify({"msg": "Incident deleted by admin"}), 200
+
 
 
 # # app/routes/admin.py
