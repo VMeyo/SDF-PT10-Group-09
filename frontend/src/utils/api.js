@@ -36,13 +36,10 @@ export const apiRequest = async (endpoint, options = {}) => {
 }
 
 export const incidentAPI = {
-  // Get all incidents
   getAll: () => apiRequest("/incidents/"),
 
-  // Get single incident
   getById: (id) => apiRequest(`/incidents/${id}`),
 
-  // Create new incident
   create: (data) =>
     apiRequest("/incidents/", {
       method: "POST",
@@ -55,7 +52,6 @@ export const incidentAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Delete incident
   delete: (id) =>
     apiRequest(`/incidents/${id}`, {
       method: "DELETE",
@@ -67,23 +63,25 @@ export const incidentAPI = {
       body: JSON.stringify({ status }),
     }),
 
-  // Add comment to incident
   addComment: (id, text) =>
     apiRequest(`/incidents/${id}/comments`, {
       method: "POST",
       body: JSON.stringify({ text }),
     }),
 
-  // Get comments for incident
   getComments: (id) => apiRequest(`/incidents/${id}/comments`),
 }
 
 export const userAPI = {
-  // Get all users (admin only)
   getAll: () => apiRequest("/users"),
 
-  // Get single user
   getById: (id) => apiRequest(`/users/${id}`),
+
+  edit: (id, data) =>
+    apiRequest(`/users/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 
   update: (id, data) =>
     apiRequest(`/users/${id}`, {
@@ -91,7 +89,6 @@ export const userAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Delete user (admin only)
   delete: (id) =>
     apiRequest(`/users/${id}`, {
       method: "DELETE",
@@ -105,14 +102,12 @@ export const authAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Login user
   login: (data) =>
     apiRequest("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  // Get current user
   me: () => apiRequest("/auth/me"),
 
   promote: (userId) =>
@@ -127,6 +122,15 @@ export const authAPI = {
         current_password: currentPassword,
         new_password: newPassword,
         confirm_new_password: confirmNewPassword,
+      }),
+    }),
+
+  updateSecurityQuestion: (question, answer) =>
+    apiRequest("/auth/security-question", {
+      method: "PUT",
+      body: JSON.stringify({
+        security_question: question,
+        security_answer: answer,
       }),
     }),
 }
@@ -163,5 +167,16 @@ export const adminAPI = {
     apiRequest(`/admin/incidents/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
+    }),
+
+  editIncident: (id, data) =>
+    apiRequest(`/admin/incidents/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteIncident: (id) =>
+    apiRequest(`/admin/incidents/${id}`, {
+      method: "DELETE",
     }),
 }

@@ -684,7 +684,7 @@ export const ReportsPage = () => {
               report.reporter_name ||
               user?.name ||
               user?.username ||
-              "Unknown User"
+              "Anonymous Reporter"
 
             console.log("[v0] Report", report.id, "reporter:", reporterName, "from data:", reporterInfo)
 
@@ -742,7 +742,9 @@ export const ReportsPage = () => {
                                 className="media-preview-image"
                                 onError={(e) => {
                                   console.error("[v0] Failed to load image:", media.file_url)
-                                  e.target.src = "/incident-evidence.jpg"
+                                  e.target.style.display = "none"
+                                  e.target.parentElement.innerHTML =
+                                    '<div class="media-preview-placeholder"><span>📷</span></div>'
                                 }}
                               />
                             ) : media.file_type?.startsWith("video/") || media.file_url?.match(/\.(mp4|mov|avi)$/i) ? (

@@ -16,6 +16,19 @@ export const UserManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([])
   const [showUserModal, setShowUserModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "user",
+    points: 0,
+    location: "",
+    latitude: null,
+    longitude: null,
+  })
+  const [saving, setSaving] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState("")
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -42,9 +55,6 @@ export const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      console.log("[v0] Fetching users from:", `${API_BASE}/users/`)
-      console.log("[v0] Using token:", token ? "Token present" : "No token")
-
       const response = await fetch(`${API_BASE}/users/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,25 +62,18 @@ export const UserManagement = () => {
         },
       })
 
-      console.log("[v0] Users response status:", response.status)
-      console.log("[v0] Users response headers:", Object.fromEntries(response.headers.entries()))
-
       const responseText = await response.text()
-      console.log("[v0] Users raw response:", responseText)
 
       if (response.ok) {
         let data
         try {
           data = JSON.parse(responseText)
         } catch (e) {
-          console.error("[v0] Failed to parse JSON:", e)
+          console.error("Failed to parse JSON:", e)
           setUsers([])
           setLoading(false)
           return
         }
-
-        console.log("[v0] Users parsed data:", data)
-        console.log("[v0] Data type:", typeof data, "Is array:", Array.isArray(data))
 
         let usersArray = []
         if (Array.isArray(data)) {
@@ -79,20 +82,14 @@ export const UserManagement = () => {
           usersArray = data.users
         } else if (data.data && Array.isArray(data.data)) {
           usersArray = data.data
-        } else {
-          console.error("[v0] Unexpected data format:", data)
         }
 
-        console.log("[v0] Final users array:", usersArray, "Length:", usersArray.length)
         setUsers(usersArray)
       } else {
-        console.error("[v0] Failed to fetch users. Status:", response.status)
-        console.error("[v0] Error response:", responseText)
         setUsers([])
       }
     } catch (error) {
-      console.error("[v0] Error fetching users:", error)
-      console.error("[v0] Error stack:", error.stack)
+      console.error("Error fetching users:", error)
       setUsers([])
     } finally {
       setLoading(false)
@@ -103,7 +100,6 @@ export const UserManagement = () => {
     setPromoting(userId)
 
     try {
-      console.log("[v0] Promoting user:", userId)
       const response = await fetch(`${API_BASE}/auth/users/${userId}/promote`, {
         method: "PUT",
         headers: {
@@ -112,7 +108,6 @@ export const UserManagement = () => {
         },
       })
 
-      console.log("[v0] Promote response status:", response.status)
       if (response.ok) {
         setUsers(users.map((user) => (user.id === userId ? { ...user, role: "admin" } : user)))
         alert("User promoted to admin successfully!")
@@ -121,7 +116,7 @@ export const UserManagement = () => {
         alert(errorData.msg || errorData.message || "Failed to promote user")
       }
     } catch (error) {
-      console.error("[v0] Error promoting user:", error)
+      console.error("Error promoting user:", error)
       alert("Error promoting user. Please check your connection.")
     } finally {
       setPromoting(null)
@@ -133,13 +128,103 @@ export const UserManagement = () => {
     try {
       if (newRole === "admin") {
         await promoteUser(userId)
-      } else {
-        console.log("Role update not supported for non-admin roles")
       }
     } catch (error) {
       console.error("Error updating user role:", error)
     } finally {
       setPromoting(null)
+    }
+  }
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true)
+    setLocationError("")
+
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by this browser")
+      setLocationLoading(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setEditForm((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }))
+        setLocationLoading(false)
+        reverseGeocode(latitude, longitude)
+      },
+      (error) => {
+        setLocationError("Unable to get your location. Please enter manually.")
+        setLocationLoading(false)
+        console.error("Geolocation error:", error)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      },
+    )
+  }
+
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      )
+      const data = await response.json()
+
+      if (data.locality || data.city) {
+        const address = [data.locality || data.city, data.countryName].filter(Boolean).join(", ")
+        setEditForm((prev) => ({
+          ...prev,
+          location: prev.location || address,
+        }))
+      }
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error)
+    }
+  }
+
+  const editUser = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      const updateData = {
+        name: editForm.name,
+        email: editForm.email,
+        phone: editForm.phone,
+        role: editForm.role,
+        points: editForm.points,
+      }
+
+      const response = await fetch(`${API_BASE}/users/${selectedUser.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      })
+
+      if (response.ok) {
+        await fetchUsers()
+        alert("User updated successfully!")
+        setShowUserModal(false)
+        setSelectedUser(null)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.msg || errorData.message || "Failed to update user")
+      }
+    } catch (error) {
+      console.error("Error updating user:", error)
+      alert("Error updating user")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -323,6 +408,16 @@ export const UserManagement = () => {
                       size="sm"
                       onClick={() => {
                         setSelectedUser(user)
+                        setEditForm({
+                          name: user.name || "",
+                          email: user.email || "",
+                          phone: user.phone || "",
+                          role: user.role || "user",
+                          points: user.points || 0,
+                          location: user.location || "",
+                          latitude: user.latitude || null,
+                          longitude: user.longitude || null,
+                        })
                         setShowUserModal(true)
                       }}
                     >
@@ -357,34 +452,115 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* User Modal */}
       {showUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">{selectedUser ? "Edit User" : "Add New User"}</h3>
-            <div className="space-y-4">
-              <Input placeholder="Full Name" />
-              <Input placeholder="Email Address" type="email" />
-              <Input placeholder="Phone Number" type="tel" />
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="user">User</option>
-                <option value="moderator">Moderator</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowUserModal(false)
-                  setSelectedUser(null)
-                }}
-              >
-                Cancel
-              </Button>
-              <Button>{selectedUser ? "Update User" : "Create User"}</Button>
-            </div>
-          </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[85vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Edit User</CardTitle>
+              <CardDescription>Update user information and permissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={editUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <Input
+                    placeholder="Full Name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <Input
+                    placeholder="Email Address"
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <Input
+                    placeholder="Phone Number"
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="User location"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
+                        className="shrink-0 bg-transparent"
+                      >
+                        {locationLoading ? "📍..." : "📍 GPS"}
+                      </Button>
+                    </div>
+
+                    {locationError && <p className="text-sm text-destructive">{locationError}</p>}
+
+                    {editForm.latitude && editForm.longitude && (
+                      <p className="text-sm text-muted-foreground">
+                        📍 Coordinates: {editForm.latitude.toFixed(6)}, {editForm.longitude.toFixed(6)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    value={editForm.role}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  >
+                    <option value="user">User</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Community Points</label>
+                  <Input
+                    placeholder="Points"
+                    type="number"
+                    value={editForm.points}
+                    onChange={(e) => setEditForm({ ...editForm, points: Number.parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowUserModal(false)
+                      setSelectedUser(null)
+                    }}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Updating..." : "Update User"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
 

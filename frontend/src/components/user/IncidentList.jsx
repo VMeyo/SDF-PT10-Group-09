@@ -6,6 +6,7 @@ import { Card, CardContent } from "../ui/Card"
 import { Button } from "../ui/Button"
 import { IncidentFilters } from "../incidents/IncidentFilters"
 import "./IncidentList.css"
+import { EditIncidentModalComponent } from "./EditIncidentModal"
 
 export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onIncidentDeleted }) => {
   const { user } = useAuth()
@@ -143,35 +144,10 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
     }
   }
 
-  const handleSaveEdit = async (updatedIncident) => {
-    try {
-      const response = await fetch(`${API_BASE}/incidents/${updatedIncident.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: updatedIncident.title,
-          description: updatedIncident.description,
-          location: updatedIncident.location,
-          category: updatedIncident.category,
-          severity: updatedIncident.severity,
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        onIncidentUpdated?.(data)
-        setEditingIncident(null)
-        alert("Incident updated successfully!")
-      } else {
-        alert("Failed to update incident. Please try again.")
-      }
-    } catch (error) {
-      console.error("Error updating incident:", error)
-      alert("Error updating incident. Please check your connection.")
-    }
+  const handleSaveEdit = async (incidentId) => {
+    setEditingIncident(null)
+    // Trigger parent component to refresh incidents
+    onIncidentUpdated?.()
   }
 
   const getGradientClass = (severity) => {
@@ -269,7 +245,8 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
           const mediaCount = incident.media_count || incident.media?.length || 0
           const reporterId = incident.created_by || incident.user_id
           const reporterInfo = reportersData[reporterId]
-          const reporterName = reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Unknown User"
+          const reporterName =
+            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
 
           const isOwner = String(reporterId) === String(user?.id)
           const canEdit = isOwner && incident.status !== "resolved"
@@ -493,151 +470,12 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
       </div>
 
       {editingIncident && (
-        <EditIncidentModal
+        <EditIncidentModalComponent
           incident={editingIncident}
-          onSave={handleSaveEdit}
+          onSave={() => handleSaveEdit(editingIncident.id)}
           onCancel={() => setEditingIncident(null)}
         />
       )}
     </div>
   )
 }
-
-const EditIncidentModalComponent = ({ incident, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    title: incident.title || "",
-    description: incident.description || "",
-    location: incident.location || "",
-    category: incident.category || "",
-    severity: incident.severity || "medium",
-  })
-
-  const categories = [
-    "Traffic Accident",
-    "Fire Emergency",
-    "Medical Emergency",
-    "Crime",
-    "Natural Disaster",
-    "Infrastructure",
-    "Other",
-  ]
-
-  const severityLevels = [
-    { value: "low", label: "Low" },
-    { value: "medium", label: "Medium" },
-    { value: "high", label: "High" },
-    { value: "critical", label: "Critical" },
-  ]
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave({ ...incident, ...formData })
-  }
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>Edit Incident</h2>
-          <button onClick={onCancel} className="modal-close">
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label htmlFor="title">Incident Title *</label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="category">Category *</label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="form-select"
-            >
-              <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="severity">Severity Level *</label>
-            <select
-              id="severity"
-              name="severity"
-              value={formData.severity}
-              onChange={handleChange}
-              required
-              className="form-select"
-            >
-              {severityLevels.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="location">Location *</label>
-            <input
-              id="location"
-              name="location"
-              type="text"
-              value={formData.location}
-              onChange={handleChange}
-              required
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Description *</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows={4}
-              className="form-textarea"
-            />
-          </div>
-
-          <div className="modal-actions">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit">Save Changes</Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-const EditIncidentModal = EditIncidentModalComponent

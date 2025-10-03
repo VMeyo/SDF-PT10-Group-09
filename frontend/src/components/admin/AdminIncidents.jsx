@@ -5,6 +5,7 @@ import { Button } from "../ui/Button"
 import { Card, CardContent } from "../ui/Card"
 import { IncidentFilters } from "../incidents/IncidentFilters"
 import { IncidentDetailPage } from "../incidents/IncidentDetailPage"
+import { Input } from "../ui/Input"
 
 export const AdminIncidents = ({ onStatsUpdate }) => {
   const [incidents, setIncidents] = useState([])
@@ -14,6 +15,17 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
   const [reportersData, setReportersData] = useState({})
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingIncident, setEditingIncident] = useState(null)
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    location: "",
+    category: "",
+    severity: "",
+    status: "",
+  })
+  const [saving, setSaving] = useState(false)
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
@@ -110,7 +122,7 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
 
     try {
       const response = await fetch(`${API_BASE}/incidents/${incidentId}`, {
-        method: "PUT", // Flask uses PUT for updates
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -128,6 +140,66 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
       console.error("Error updating incident status:", error)
     } finally {
       setUpdating(null)
+    }
+  }
+
+  const editIncident = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      const response = await fetch(`${API_BASE}/admin/incidents/${editingIncident.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editForm),
+      })
+
+      if (response.ok) {
+        const updatedIncident = await response.json()
+        setIncidents(
+          incidents.map((incident) =>
+            incident.id === editingIncident.id ? { ...incident, ...updatedIncident } : incident,
+          ),
+        )
+        alert("Incident updated successfully!")
+        setShowEditModal(false)
+        setEditingIncident(null)
+        onStatsUpdate()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.msg || errorData.message || "Failed to update incident")
+      }
+    } catch (error) {
+      console.error("Error updating incident:", error)
+      alert("Error updating incident")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteIncident = async (incidentId) => {
+    if (!confirm("Are you sure you want to delete this incident? This action cannot be undone.")) return
+
+    try {
+      const response = await fetch(`${API_BASE}/admin/incidents/${incidentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (response.ok) {
+        setIncidents(incidents.filter((incident) => incident.id !== incidentId))
+        alert("Incident deleted successfully!")
+        onStatsUpdate()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        alert(errorData.msg || errorData.message || "Failed to delete incident")
+      }
+    } catch (error) {
+      console.error("Error deleting incident:", error)
+      alert("Error deleting incident")
     }
   }
 
@@ -250,6 +322,43 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
                         )}
                       </>
                     )}
+                    {incident.status === "resolved" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateIncidentStatus(incident.id, "in_progress")}
+                        disabled={updating === incident.id}
+                        className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                      >
+                        {updating === incident.id ? "Updating..." : "Reopen"}
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingIncident(incident)
+                        setEditForm({
+                          title: incident.title,
+                          description: incident.description,
+                          location: incident.location,
+                          category: incident.category,
+                          severity: incident.severity,
+                          status: incident.status,
+                        })
+                        setShowEditModal(true)
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteIncident(incident.id)}
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setSelectedIncident(incident.id)}>
                       View Details
                     </Button>
@@ -269,6 +378,101 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
             <p className="text-muted-foreground">Try adjusting your filters to see more results.</p>
           </CardContent>
         </Card>
+      )}
+
+      {showEditModal && editingIncident && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Edit Incident #{editingIncident.id}</h3>
+            <form onSubmit={editIncident} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <Input
+                  placeholder="Incident Title"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  placeholder="Incident Description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg min-h-[100px]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <Input
+                  placeholder="Location"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  >
+                    <option value="fire">Fire</option>
+                    <option value="flood">Flood</option>
+                    <option value="accident">Accident</option>
+                    <option value="crime">Crime</option>
+                    <option value="medical">Medical</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    value={editForm.severity}
+                    onChange={(e) => setEditForm({ ...editForm, severity: e.target.value })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingIncident(null)
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {selectedIncident && (

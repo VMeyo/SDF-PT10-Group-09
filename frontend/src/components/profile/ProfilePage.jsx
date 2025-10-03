@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "../../contexts/AuthContext"
+import { authAPI, userAPI } from "../../utils/api"
 import "../../styles/mobile-fixes.css"
 
 export const ProfilePage = ({ onBack }) => {
@@ -9,6 +10,12 @@ export const ProfilePage = ({ onBack }) => {
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editData, setEditData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  })
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -42,12 +49,7 @@ export const ProfilePage = ({ onBack }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await authAPI.me()
 
       if (response.ok) {
         const profileData = await response.json()
@@ -70,10 +72,14 @@ export const ProfilePage = ({ onBack }) => {
             : []
 
           profileData.reports_count = userIncidents.length
-          console.log("[v0] User has", userIncidents.length, "reports")
         }
 
         setUserData(profileData)
+        setEditData({
+          name: profileData.name || "",
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+        })
         if (profileData.security_question) {
           setSecurityData({ ...securityData, question: profileData.security_question })
         }
@@ -86,6 +92,30 @@ export const ProfilePage = ({ onBack }) => {
       setUserData(user)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault()
+    setError("")
+    setMessage("")
+    setUpdating(true)
+
+    try {
+      const response = await userAPI.update(userData.id, editData)
+
+      if (response.ok) {
+        setMessage("Profile updated successfully")
+        setEditMode(false)
+        await fetchUserProfile()
+      } else {
+        const errorData = await response.json()
+        setError(errorData.msg || errorData.message || "Failed to update profile")
+      }
+    } catch (error) {
+      setError("Error updating profile")
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -107,18 +137,11 @@ export const ProfilePage = ({ onBack }) => {
     setUpdating(true)
 
     try {
-      const response = await fetch(`${API_BASE}/auth/change-password`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword,
-          confirm_new_password: passwordData.confirmPassword,
-        }),
-      })
+      const response = await authAPI.changePassword(
+        passwordData.currentPassword,
+        passwordData.newPassword,
+        passwordData.confirmPassword,
+      )
 
       if (response.ok) {
         setMessage("Password updated successfully")
@@ -156,8 +179,11 @@ export const ProfilePage = ({ onBack }) => {
     setUpdating(true)
 
     try {
-      const response = await fetch(`${API_BASE}/auth/setup-security-question`, {
-        method: "POST",
+      const endpoint = userData?.security_question ? "/auth/security-question" : "/auth/setup-security-question"
+      const method = userData?.security_question ? "PUT" : "POST"
+
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -169,7 +195,11 @@ export const ProfilePage = ({ onBack }) => {
       })
 
       if (response.ok) {
-        setMessage("Security question set up successfully")
+        setMessage(
+          userData?.security_question
+            ? "Security question updated successfully"
+            : "Security question set up successfully",
+        )
         setShowSecuritySetup(false)
         setSecurityData({ ...securityData, answer: "" })
         fetchUserProfile()
@@ -202,10 +232,7 @@ export const ProfilePage = ({ onBack }) => {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => {
-              console.log("[v0] Profile back button clicked")
-              onBack()
-            }}
+            onClick={onBack}
             className="back-to-dashboard-mobile md:flex md:items-center md:text-gray-600 md:hover:text-gray-800 md:mb-4 md:transition-colors md:bg-transparent md:border-none md:p-0 md:min-h-auto md:font-normal"
           >
             <span className="mr-2">←</span>
@@ -215,11 +242,47 @@ export const ProfilePage = ({ onBack }) => {
           <p className="text-gray-600">Manage your account information and security settings</p>
         </div>
 
+        {message && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800">{message}</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Information Card */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
+                {!editMode ? (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Edit Profile
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditMode(false)
+                      setEditData({
+                        name: userData.name || "",
+                        email: userData.email || "",
+                        phone: userData.phone || "",
+                      })
+                    }}
+                    className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
 
               <div className="flex items-center space-x-4 mb-6">
                 <div
@@ -246,47 +309,102 @@ export const ProfilePage = ({ onBack }) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-gray-900">{userData?.email || user?.email || "Not available"}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-gray-900">{userData?.username || user?.username || "Not available"}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          userData?.role === "admin" || user?.role === "admin"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {userData?.role === "admin" || user?.role === "admin" ? "Administrator" : "Standard User"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {userData?.created_at && (
+              {editMode ? (
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      value={editData.name}
+                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      value={editData.email}
+                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editData.phone}
+                      onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="w-full sm:w-auto px-6 py-3 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: "linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end))",
+                    }}
+                  >
+                    {updating ? "Saving..." : "Save Changes"}
+                  </button>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                     <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <p className="text-gray-900">{new Date(userData.created_at).toLocaleDateString()}</p>
+                      <p className="text-gray-900">{userData?.email || user?.email || "Not available"}</p>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-gray-900">{userData?.username || user?.username || "Not available"}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-gray-900">{userData?.phone || "Not provided"}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            userData?.role === "admin" || user?.role === "admin"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {userData?.role === "admin" || user?.role === "admin" ? "Administrator" : "Standard User"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {userData?.created_at && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Member Since</label>
+                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-gray-900">{new Date(userData.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -443,18 +561,6 @@ export const ProfilePage = ({ onBack }) => {
         <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
-
-            {message && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800">{message}</p>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">{error}</p>
-              </div>
-            )}
 
             <form onSubmit={handlePasswordUpdate} className="space-y-4">
               <div>
