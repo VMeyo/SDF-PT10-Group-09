@@ -363,14 +363,15 @@ export const ReportManagement = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          points: 10,
-          reason: `Report #${reportId} approved`,
+          points: 25,
+          reason: `Report #${reportId} verified and approved`,
           incident_id: reportId,
         }),
       })
 
       if (response.ok) {
         console.log("[v0] Points awarded successfully")
+        alert(`25 points awarded to user for verified report #${reportId}`)
       } else {
         console.error("[v0] Failed to award points")
       }
