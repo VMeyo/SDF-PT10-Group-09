@@ -337,6 +337,10 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
     switch (status) {
       case "resolved":
         return "bg-green-100 text-green-800 border-green-200"
+      case "approved":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "investigating":
+        return "bg-blue-100 text-blue-800 border-blue-200"
       case "in_progress":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "pending":
@@ -690,6 +694,7 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   >
                     <option value="pending">Pending</option>
                     <option value="investigating">Investigating</option>
+                    <option value="approved">Approved</option>
                     <option value="resolved">Resolved</option>
                     <option value="rejected">Rejected</option>
                   </select>

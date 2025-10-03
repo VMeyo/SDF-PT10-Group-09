@@ -179,10 +179,16 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
     switch (status) {
       case "resolved":
         return "bg-green-100 text-green-800 border-green-200"
+      case "approved":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
+      case "investigating":
+        return "bg-blue-100 text-blue-800 border-blue-200"
       case "in_progress":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "pending":
         return "bg-gray-100 text-gray-800 border-gray-200"
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
@@ -305,8 +311,30 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => updateIncidentStatus(incident.id, "investigating")}
+                            disabled={updating === incident.id}
+                          >
+                            {updating === incident.id ? "Updating..." : "Start Investigation"}
+                          </Button>
+                        )}
+                        {incident.status === "investigating" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateIncidentStatus(incident.id, "approved")}
+                            disabled={updating === incident.id}
+                            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          >
+                            {updating === incident.id ? "Updating..." : "Approve"}
+                          </Button>
+                        )}
+                        {incident.status === "approved" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => updateIncidentStatus(incident.id, "in_progress")}
                             disabled={updating === incident.id}
+                            className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
                           >
                             {updating === incident.id ? "Updating..." : "Start Review"}
                           </Button>
@@ -452,8 +480,10 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
                   onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                 >
                   <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
+                  <option value="investigating">Investigating</option>
+                  <option value="approved">Approved</option>
                   <option value="resolved">Resolved</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
               <div className="flex justify-end space-x-2 mt-6">

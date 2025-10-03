@@ -8,6 +8,7 @@ export const GoogleMapView = () => {
   const mapRef = useRef(null)
   const [map, setMap] = useState(null)
   const [activeReports, setActiveReports] = useState([])
+  const markersRef = useRef([])
   const [filters, setFilters] = useState({
     accidentType: "All Types",
     severityLevel: "All Levels",
@@ -29,6 +30,22 @@ export const GoogleMapView = () => {
       initializeMapWithElement()
     }
   }, [googleMapsLoaded, map])
+
+  useEffect(() => {
+    if (map && activeReports.length > 0) {
+      clearMarkers()
+      activeReports.forEach((report) => {
+        addMarkerToMap(map, report)
+      })
+    }
+  }, [map, activeReports])
+
+  const clearMarkers = () => {
+    markersRef.current.forEach((marker) => {
+      marker.setMap(null)
+    })
+    markersRef.current = []
+  }
 
   const loadGoogleMapsScript = () => {
     if (!GOOGLE_MAPS_API_KEY) {
@@ -121,12 +138,6 @@ export const GoogleMapView = () => {
       const googleMap = new window.google.maps.Map(mapRef.current, mapOptions)
       setMap(googleMap)
       setLoading(false)
-
-      if (activeReports.length > 0) {
-        activeReports.forEach((report) => {
-          addMarkerToMap(googleMap, report)
-        })
-      }
     } catch (error) {
       setError("Failed to initialize Google Maps. Please refresh the page.")
       setLoading(false)
@@ -141,29 +152,8 @@ export const GoogleMapView = () => {
     const lng =
       Number.parseFloat(report.longitude) || Number.parseFloat(report.lng) || 36.8219 + (Math.random() - 0.5) * 0.1
 
-    // Create custom marker with pulsing effect
     const markerColor = getSeverityMarkerColor(report.severity || report.priority)
     const severityClass = (report.severity || report.priority || "medium").toLowerCase()
-
-    // Create a custom HTML marker with pulsing animation
-    const markerDiv = document.createElement("div")
-    markerDiv.className = "map-marker-pulse"
-    markerDiv.style.cssText = `
-      width: 20px;
-      height: 20px;
-      background-color: ${markerColor};
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-      position: relative;
-    `
-
-    // Add pulsing rings for critical and high severity
-    if (severityClass === "critical" || severityClass === "high") {
-      markerDiv.style.animation =
-        severityClass === "critical" ? "blink-critical 1s ease-in-out infinite" : "blink-high 1.5s ease-in-out infinite"
-    }
 
     const marker = new window.google.maps.Marker({
       position: { lat, lng },
@@ -179,6 +169,8 @@ export const GoogleMapView = () => {
       },
       animation: window.google.maps.Animation.DROP,
     })
+
+    markersRef.current.push(marker)
 
     const infoWindow = new window.google.maps.InfoWindow({
       content: `
@@ -238,12 +230,6 @@ export const GoogleMapView = () => {
         }))
 
         setActiveReports(reports)
-
-        if (map && reports.length > 0) {
-          reports.forEach((report) => {
-            addMarkerToMap(map, report)
-          })
-        }
       } else {
         console.error("Failed to fetch incidents from API")
         setActiveReports([])
@@ -363,7 +349,6 @@ export const GoogleMapView = () => {
         <div className="flex-1">
           <Card className="h-full">
             <CardContent className="p-0 h-full relative">
-              {/* Realtime Indicator */}
               <div className="realtime-indicator">
                 <div className="pulse-dot"></div>
                 <span>Live Updates</span>
@@ -379,7 +364,6 @@ export const GoogleMapView = () => {
                 }}
               />
 
-              {/* Map Legend */}
               <div className="map-legend">
                 <h4>Severity Levels</h4>
                 <div className="map-legend-item">

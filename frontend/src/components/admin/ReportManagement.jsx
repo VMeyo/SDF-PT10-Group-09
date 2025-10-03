@@ -26,6 +26,7 @@ export const ReportManagement = () => {
     inProgress: 0,
     resolved: 0,
     rejected: 0,
+    approved: 0,
   })
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -198,6 +199,7 @@ export const ReportManagement = () => {
       inProgress: reports.filter((r) => r.status === "in_progress" || r.status === "investigating").length,
       resolved: reports.filter((r) => r.status === "resolved").length,
       rejected: reports.filter((r) => r.status === "rejected").length,
+      approved: reports.filter((r) => r.status === "approved").length,
     })
   }
 
@@ -281,6 +283,8 @@ export const ReportManagement = () => {
     switch (status) {
       case "resolved":
         return "bg-green-100 text-green-800"
+      case "approved":
+        return "bg-emerald-100 text-emerald-800"
       case "in_progress":
       case "investigating":
         return "bg-blue-100 text-blue-800"
@@ -403,7 +407,7 @@ export const ReportManagement = () => {
       </div>
 
       {/* Report Statistics */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
@@ -434,6 +438,12 @@ export const ReportManagement = () => {
             <div className="text-sm text-gray-600">Rejected</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-emerald-600">{stats.approved}</div>
+            <div className="text-sm text-gray-600">Approved</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Advanced Filters */}
@@ -459,6 +469,7 @@ export const ReportManagement = () => {
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
               <option value="investigating">Investigating</option>
+              <option value="approved">Approved</option>
               <option value="resolved">Resolved</option>
               <option value="rejected">Rejected</option>
             </select>
@@ -567,6 +578,7 @@ export const ReportManagement = () => {
                       >
                         <option value="pending">Pending</option>
                         <option value="investigating">Investigating</option>
+                        <option value="approved">Approved</option>
                         <option value="resolved">Resolved</option>
                         <option value="rejected">Rejected</option>
                       </select>
