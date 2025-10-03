@@ -12,7 +12,7 @@ export const PointsSystem = () => {
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(true)
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL
+  const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
   useEffect(() => {
@@ -135,7 +135,9 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
                     </div>
                     <div>
                       <h4 className="font-medium">Report Incident</h4>
-                      <p className="text-sm text-muted-foreground">+10 points per report</p>
+                      <p className="text-sm text-muted-foreground">
+                        Submit a report (points awarded after verification)
+                      </p>
                     </div>
                   </div>
 
@@ -144,8 +146,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
                       ✅
                     </div>
                     <div>
-                      <h4 className="font-medium">Incident Resolved</h4>
-                      <p className="text-sm text-muted-foreground">+25 points when resolved</p>
+                      <h4 className="font-medium">Verified Report</h4>
+                      <p className="text-sm text-muted-foreground">+25 points when admin verifies your report</p>
                     </div>
                   </div>
 
@@ -177,7 +179,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
                     </div>
                     <div>
                       <h4 className="font-medium">High Priority Report</h4>
-                      <p className="text-sm text-muted-foreground">+50 points for urgent incidents</p>
+                      <p className="text-sm text-muted-foreground">+50 points for verified urgent incidents</p>
                     </div>
                   </div>
 

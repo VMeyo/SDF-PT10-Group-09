@@ -360,6 +360,7 @@ export const ProfilePage = ({ onBack }) => {
                     <div>
                       <p className="text-sm font-medium text-green-600">Community Points</p>
                       <p className="text-2xl font-bold text-green-700">{userData?.points || 0}</p>
+                      <p className="text-xs text-green-600 mt-1">Earned from verified reports</p>
                     </div>
                     <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
                       <span className="text-white text-lg">🏆</span>

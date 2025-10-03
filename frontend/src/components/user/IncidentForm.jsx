@@ -198,7 +198,7 @@ export const IncidentForm = ({ onIncidentCreated }) => {
           mediaUrls = await uploadMedia(data.id, mediaFiles)
         }
 
-        setSuccess("Incident reported successfully!")
+        setSuccess("Incident reported successfully! You'll earn 25 points once an admin verifies your report.")
         setFormData({
           title: "",
           description: "",
