@@ -695,7 +695,7 @@
   }
 }
 
-/* Added media preview styles */
+/* Updated media preview styles to make images fill the area properly */
 .media-preview-section {
   display: flex;
   flex-direction: column;
@@ -706,15 +706,16 @@
 
 .media-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   width: 100%;
+  height: 100px;
 }
 
 .media-preview-item {
   position: relative;
   width: 100%;
-  height: 80px;
+  height: 100%;
   border-radius: 8px;
   overflow: hidden;
   background: #f1f5f9;
@@ -726,6 +727,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .media-preview-placeholder {
@@ -753,6 +755,8 @@
   font-size: 1.25rem;
   font-weight: 600;
   border-radius: 8px;
+  grid-column: 2;
+  grid-row: 1 / 3;
 }
 
 .media-count-badge {

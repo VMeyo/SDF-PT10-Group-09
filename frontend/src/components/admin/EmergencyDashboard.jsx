@@ -326,7 +326,7 @@ export const EmergencyDashboard = () => {
               const reporterId = report.created_by || report.user_id
               const reporterInfo = reportersData[reporterId]
               const reporterName =
-                reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Unknown User"
+                reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Anonymous Reporter"
 
               const mediaArray = report.media || []
               const firstImage = mediaArray.find(

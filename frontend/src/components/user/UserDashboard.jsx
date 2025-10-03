@@ -542,7 +542,10 @@ export const UserDashboard = () => {
                             const reporterId = report.created_by || report.user_id
                             const reporterInfo = reportersData[reporterId]
                             const reporterName =
-                              reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Unknown User"
+                              reporterInfo?.name ||
+                              reporterInfo?.username ||
+                              report.reporter_name ||
+                              "Anonymous Reporter"
 
                             return (
                               <div key={report.id} className="modern-report-card">
