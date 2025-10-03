@@ -137,8 +137,8 @@ def delete_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     user_id = int(get_jwt_identity())  # ✅ cast to int
 
-    # Authorization check
-    if incident.created_by != user_id:
+    # Creator OR admin can delete
+    if incident.created_by != user_id and user.role != "admin":
         return jsonify({"msg": "Unauthorized"}), 403
 
     db.session.delete(incident)
