@@ -36,15 +36,17 @@ Ajali! is a citizen-driven emergency reporting system for Kenya that enables use
 
 ## 🚀 Deployment
 
-- **Render** – Backend hosting platform: [https://sdf-pt10-group-09.onrender.com/](https://sdf-pt10-group-09.onrender.com/)  
-- **Netlify** – Frontend hosting platform (planned)
+- **Render** – Backend hosting platform: [https://sdf-pt-10-group-09.vercel.app/](https://sdf-pt-10-group-09.vercel.app/)  
+
 
 ## 🌍 Project Links
-
-- **Frontend (Development):** #[http://127.0.0.1:5173/](http://127.0.0.1:5173/)
-- **Fronted vercel link:**  <u>sdf-pt-10-group-09-81kn-hdiy3ly3g-victor-meyos-projects.vercel.app</u>
-- **Backend (Production):** [https://sdf-pt10-group-09.onrender.com/](https://sdf-pt10-group-09.onrender.com/)  
 - **GitHub Repository:** [https://github.com/VMeyo/SDF-PT10-Group-09](https://github.com/VMeyo/SDF-PT10-Group-09)
+
+- **Backend (Production):** [https://sdf-pt10-group-09.onrender.com/](https://sdf-pt10-group-09.onrender.com/)  
+- **Fronted vercel link:**  [https://sdf-pt-10-group-09.vercel.app/](https://sdf-pt-10-group-09.vercel.app/)
+
+
+
 
 ## 🚀 Getting Started
 
@@ -112,12 +114,32 @@ JWT_SECRET_KEY=your_super_secret_jwt_key
 FLASK_ENV=development
 ```
 
-### Initialize the Database
 
+### 🧰 Database Migrations (Local & Remote)
+
+**Local:**
 ```bash
-flask db init
-flask db migrate
+flask db init        # only once
+flask db migrate -m "Initial migration"
 flask db upgrade
+
+### Initialize the Database
+```
+
+Remote (Production):
+To apply migrations on the live Render server, simply visit:
+👉 https://sdf-pt10-group-09.onrender.com/migrate/upgrade
+
+### 🌐 CORS Configuration
+Ensure your Flask backend allows requests from your frontend domain.  
+In `app/__init__.py` (or your CORS setup file), include:
+```python
+from flask_cors import CORS
+
+CORS(app, origins=[
+    "http://localhost:5173",   # Local development
+    "https://sdf-pt-10-group-09.vercel.app"  # Production frontend
+])
 ```
 
 ### Start the Development Server
@@ -221,7 +243,14 @@ Open a Pull Request on the main repository to merge your feature branch into `ma
 This is **all-in-one** and ready to use in your repository.
 
 
+## 👥 Contributors
 
+| Name | Email | Role |
+|------|-------|------|
+| Machera Kerama | [machera.kerama@student.moringaschool.com](mailto:machera.kerama@student.moringaschool.com) | Full Stack Developer |
+| Rowney Ouma | [rowney.ouma@student.moringaschool.com](mailto:rowney.ouma@student.moringaschool.com) | Full Stack Developer |
+| Victor Meyo | [victor.meyo@student.moringaschool.com](mailto:victor.meyo@student.moringaschool.com) | Full Stack Developer |
+| Collins Kipkemoi | [collins.kipkemoi@student.moringaschool.com](mailto:collins.kipkemoi@student.moringaschool.com) | Full Stack Developer |
 
 
 
