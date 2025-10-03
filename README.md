@@ -2,6 +2,8 @@
 
 Ajali! is a citizen-driven emergency reporting system for Kenya that enables users to **report accidents and emergencies**, **view incidents on an interactive map**, and **receive real-time updates**.
 
+![Ajali Image](Ajali_image.png)
+
 ---
 
 ## 🛠️ Tech & License
