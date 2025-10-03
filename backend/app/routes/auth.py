@@ -41,20 +41,12 @@ def signup():
     email = data.get("email")
     phone = data.get("phone")
     password = data.get("password")
-    security_question = data.get("security_question")
-    security_answer = data.get("security_answer")
 
     if User.query.filter_by(email=email).first():
         return jsonify({"msg": "Email already registered"}), 400
 
     user = User(name=name, email=email, phone=phone, role="user")
-    user.password = password
-    
-    # Save security question/answer if provided
-    if security_question and security_answer:
-        user.security_question = security_question
-        user.security_answer = generate_password_hash(security_answer.lower().strip())
-    
+    user.password = generate_password_hash(password)
     db.session.add(user)
     db.session.commit()
 
