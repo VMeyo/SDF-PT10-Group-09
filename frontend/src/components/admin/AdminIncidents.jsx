@@ -14,7 +14,6 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const [selectedIncident, setSelectedIncident] = useState(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(null)
-  const [reportersData, setReportersData] = useState({})
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingIncident, setEditingIncident] = useState(null)
   const [editForm, setEditForm] = useState({
@@ -38,30 +37,6 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
     applyFilters()
   }, [incidents, filters])
 
-  const fetchReporterData = async (userId) => {
-    if (reportersData[userId]) {
-      return reportersData[userId]
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setReportersData((prev) => ({ ...prev, [userId]: userData }))
-        return userData
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
-    }
-    return null
-  }
-
   const fetchIncidents = async () => {
     try {
       console.log("[v0] Admin fetching incidents from:", `${API_BASE}/incidents/`)
@@ -77,9 +52,6 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
           data.slice(0, 3).map((i) => ({ id: i.id, status: i.status, title: i.title })),
         )
         setIncidents(data)
-
-        const uniqueUserIds = [...new Set(data.map((i) => i.created_by || i.user_id).filter(Boolean))]
-        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
       } else {
         console.log("[v0] Admin fetch failed with status:", response.status)
       }
@@ -256,34 +228,64 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
       <div className="space-y-4">
         {filteredIncidents.map((incident) => {
           const reporterId = incident.created_by || incident.user_id
-          const reporterInfo = reportersData[reporterId]
-          const reporterName =
-            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
+          const reporterName = incident.reporter_name || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
+
+          const mediaArray = incident.media || []
+          const firstImage = mediaArray.find(
+            (m) => m.file_type?.startsWith("image/") || m.file_url?.match(/\.(jpg|jpeg|png|gif)$/i),
+          )
 
           return (
-            <Card key={incident.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">{incident.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
-                      <span>📍 {incident.location}</span>
-                      <span>📅 {new Date(incident.created_at).toLocaleDateString()}</span>
-                      <span>👤 {reporterName}</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <span
-                      className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(incident.status)}`}
-                    >
-                      {incident.status?.replace("_", " ").toUpperCase()}
-                    </span>
+            <Card key={incident.id} className="hover:shadow-md transition-shadow overflow-hidden">
+              {firstImage && (
+                <div
+                  className="h-48 bg-cover bg-center relative"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${
+                      firstImage.file_url?.startsWith("http")
+                        ? firstImage.file_url
+                        : `${API_BASE.replace("/api/v1", "")}${firstImage.file_url}`
+                    })`,
+                  }}
+                >
+                  <div className="absolute top-3 right-3">
                     <span
                       className={`px-3 py-1 text-xs font-medium rounded-full border ${getSeverityColor(incident.severity)}`}
                     >
                       {incident.severity?.toUpperCase()}
                     </span>
                   </div>
+                  <div className="absolute bottom-3 left-3">
+                    <span className="bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg">
+                      {new Date(incident.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-2">{incident.title}</h3>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
+                      <span>📍 {incident.location}</span>
+                      {!firstImage && <span>📅 {new Date(incident.created_at).toLocaleDateString()}</span>}
+                      <span>👤 {reporterName}</span>
+                    </div>
+                  </div>
+                  {!firstImage && (
+                    <div className="flex flex-col space-y-2">
+                      <span
+                        className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(incident.status)}`}
+                      >
+                        {incident.status?.replace("_", " ").toUpperCase()}
+                      </span>
+                      <span
+                        className={`px-3 py-1 text-xs font-medium rounded-full border ${getSeverityColor(incident.severity)}`}
+                      >
+                        {incident.severity?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-muted-foreground mb-4 line-clamp-2">{incident.description}</p>

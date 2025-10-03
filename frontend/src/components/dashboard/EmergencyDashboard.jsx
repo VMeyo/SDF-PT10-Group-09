@@ -13,7 +13,6 @@ export const EmergencyDashboard = () => {
   })
   const [recentReports, setRecentReports] = useState([])
   const [loading, setLoading] = useState(true)
-  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
@@ -21,30 +20,6 @@ export const EmergencyDashboard = () => {
   useEffect(() => {
     fetchDashboardData()
   }, [])
-
-  const fetchReporterData = async (userId) => {
-    if (reportersData[userId]) {
-      return reportersData[userId]
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setReportersData((prev) => ({ ...prev, [userId]: userData }))
-        return userData
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
-    }
-    return null
-  }
 
   const fetchDashboardData = async () => {
     try {
@@ -63,9 +38,6 @@ export const EmergencyDashboard = () => {
       if (response.ok) {
         const incidents = await response.json()
         console.log("[v0] Dashboard incidents received:", incidents)
-
-        const uniqueUserIds = [...new Set(incidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
-        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
 
         setStats({
           activeReports: incidents.filter((i) => i.status !== "resolved").length,
@@ -93,6 +65,7 @@ export const EmergencyDashboard = () => {
             status: "active",
             reporter_name: "John Doe",
             created_at: new Date().toISOString(),
+            media: [{ file_type: "image/jpeg", file_url: "/images/report1.jpg" }],
           },
           {
             id: 2,
@@ -103,6 +76,7 @@ export const EmergencyDashboard = () => {
             status: "resolved",
             reporter_name: "Jane Smith",
             created_at: new Date(Date.now() - 3600000).toISOString(),
+            media: [{ file_type: "image/png", file_url: "/images/report2.png" }],
           },
         ]
 
@@ -330,9 +304,12 @@ export const EmergencyDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {recentReports.map((report, index) => {
             const reporterId = report.created_by || report.user_id
-            const reporterInfo = reportersData[reporterId]
-            const reporterName =
-              reporterInfo?.name || reporterInfo?.username || report.reporter_name || "Anonymous Reporter"
+            const reporterName = report.reporter_name || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
+
+            const mediaArray = report.media || []
+            const firstImage = mediaArray.find(
+              (m) => m.file_type?.startsWith("image/") || m.file_url?.match(/\.(jpg|jpeg|png|gif)$/i),
+            )
 
             return (
               <Card
@@ -340,11 +317,29 @@ export const EmergencyDashboard = () => {
                 className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] bg-white/80 backdrop-blur-sm"
               >
                 <div className="relative">
-                  <div className="h-32 lg:h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-2xl lg:text-4xl text-gray-400">📷</span>
-                      <p className="text-xs lg:text-sm text-gray-500 mt-2">{report.mediaCount} media files</p>
-                    </div>
+                  <div
+                    className="h-32 lg:h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center"
+                    style={
+                      firstImage
+                        ? {
+                            backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${
+                              firstImage.file_url?.startsWith("http")
+                                ? firstImage.file_url
+                                : `${API_BASE.replace("/api/v1", "")}${firstImage.file_url}`
+                            })`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                          }
+                        : {}
+                    }
+                  >
+                    {!firstImage && (
+                      <div className="text-center">
+                        <span className="text-2xl lg:text-4xl text-gray-400">📷</span>
+                        <p className="text-xs lg:text-sm text-gray-500 mt-2">{report.mediaCount} media files</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="absolute top-2 lg:top-3 left-2 lg:left-3 flex space-x-2">

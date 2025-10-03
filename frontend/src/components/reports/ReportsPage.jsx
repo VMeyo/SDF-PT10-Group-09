@@ -34,6 +34,13 @@ export const ReportsPage = () => {
     applyFilters()
   }, [reports, searchTerm, statusFilter])
 
+  useEffect(() => {
+    if (selectedIncident === null && !loading) {
+      // User just came back from detail view, refetch to get updates
+      fetchReports()
+    }
+  }, [selectedIncident])
+
   const formatDate = (dateString) => {
     if (!dateString) return "Date not available"
 
@@ -91,30 +98,6 @@ export const ReportsPage = () => {
     return "⚠️"
   }
 
-  const fetchReporterData = async (userId) => {
-    if (reportersData[userId]) {
-      return reportersData[userId]
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setReportersData((prev) => ({ ...prev, [userId]: userData }))
-        return userData
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
-    }
-    return null
-  }
-
   const fetchReports = async () => {
     try {
       const response = await fetch(`${API_BASE}/incidents/`, {
@@ -140,9 +123,6 @@ export const ReportsPage = () => {
 
         console.log("[v0] User's reports:", userReports.length)
         setReports(userReports)
-
-        const uniqueUserIds = [...new Set(userReports.map((r) => r.created_by || r.user_id).filter(Boolean))]
-        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
 
         setStats({
           totalReports: userReports.length,
@@ -676,17 +656,10 @@ export const ReportsPage = () => {
             const isVerified = report.verified || report.status === "resolved" || Math.random() > 0.5
 
             const reporterId = report.created_by || report.user_id
-            const reporterInfo = reportersData[reporterId]
 
-            const reporterName =
-              reporterInfo?.name ||
-              reporterInfo?.username ||
-              report.reporter_name ||
-              user?.name ||
-              user?.username ||
-              "Anonymous Reporter"
+            const reporterName = report.reporter_name || user?.name || user?.username || "Anonymous Reporter"
 
-            console.log("[v0] Report", report.id, "reporter:", reporterName, "from data:", reporterInfo)
+            console.log("[v0] Report", report.id, "reporter:", reporterName)
 
             const getCategoryInfo = (title, category) => {
               const titleLower = title.toLowerCase()

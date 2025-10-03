@@ -225,8 +225,8 @@ export const GoogleMapView = () => {
         const data = await response.json()
         const reports = data.map((incident) => ({
           ...incident,
-          casualties: incident.casualties || Math.floor(Math.random() * 3),
-          responders: incident.responders || Math.floor(Math.random() * 5),
+          casualties: incident.casualties || 0,
+          responders: incident.responders || 0,
           lat:
             Number.parseFloat(incident.latitude) ||
             Number.parseFloat(incident.lat) ||
@@ -245,34 +245,11 @@ export const GoogleMapView = () => {
           })
         }
       } else {
-        // Fallback to mock data if API fails
-        const mockReports = [
-          {
-            id: 1,
-            title: "Road Accident on Uhuru Highway",
-            location: "Uhuru Highway, Nairobi",
-            severity: "high",
-            status: "active",
-            casualties: 2,
-            responders: 3,
-            lat: -1.2921,
-            lng: 36.8219,
-          },
-          {
-            id: 2,
-            title: "Fire at Industrial Area",
-            location: "Industrial Area, Nairobi",
-            severity: "medium",
-            status: "active",
-            casualties: 0,
-            responders: 5,
-            lat: -1.3021,
-            lng: 36.8319,
-          },
-        ]
-        setActiveReports(mockReports)
+        console.error("Failed to fetch incidents from API")
+        setActiveReports([])
       }
     } catch (error) {
+      console.error("Error fetching incidents:", error)
       setActiveReports([])
     }
   }

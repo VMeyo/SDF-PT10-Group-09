@@ -12,13 +12,10 @@ export const LoginForm = ({ onToggleForm }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [resetStep, setResetStep] = useState(1) // 1: email, 2: security question, 3: new password
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
-  const [securityQuestion, setSecurityQuestion] = useState("")
-  const [securityAnswer, setSecurityAnswer] = useState("")
+  const [resetStep, setResetStep] = useState(1) // 1: phone number, 2: new password
+  const [forgotPasswordPhone, setForgotPasswordPhone] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
-  const [resetToken, setResetToken] = useState("")
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("")
   const { login } = useAuth()
@@ -46,22 +43,21 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/get-security-question`, {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-phone`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: forgotPasswordEmail }),
+        body: JSON.stringify({ phone: forgotPasswordPhone }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        setSecurityQuestion(data.security_question)
         setResetStep(2)
-        setForgotPasswordMessage("Please answer your security question")
+        setForgotPasswordMessage("Phone number verified. Please enter your new password.")
       } else {
-        setError(data.message || data.msg || "Failed to retrieve security question")
+        setError(data.message || data.msg || "Phone number not found in our system")
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -71,40 +67,6 @@ export const LoginForm = ({ onToggleForm }) => {
   }
 
   const handleForgotPasswordStep2 = async (e) => {
-    e.preventDefault()
-    setForgotPasswordLoading(true)
-    setError("")
-    setForgotPasswordMessage("")
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-security-answer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: forgotPasswordEmail,
-          security_answer: securityAnswer,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setResetToken(data.reset_token)
-        setResetStep(3)
-        setForgotPasswordMessage("Security answer verified. Please enter your new password.")
-      } else {
-        setError(data.message || data.msg || "Incorrect security answer")
-      }
-    } catch (error) {
-      setError("Network error. Please try again.")
-    }
-
-    setForgotPasswordLoading(false)
-  }
-
-  const handleForgotPasswordStep3 = async (e) => {
     e.preventDefault()
 
     if (newPassword !== confirmNewPassword) {
@@ -122,14 +84,13 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password-phone`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: forgotPasswordEmail,
-          reset_token: resetToken,
+          phone: forgotPasswordPhone,
           new_password: newPassword,
         }),
       })
@@ -141,11 +102,9 @@ export const LoginForm = ({ onToggleForm }) => {
         setTimeout(() => {
           setShowForgotPassword(false)
           setResetStep(1)
-          setForgotPasswordEmail("")
-          setSecurityAnswer("")
+          setForgotPasswordPhone("")
           setNewPassword("")
           setConfirmNewPassword("")
-          setResetToken("")
           setForgotPasswordMessage("")
         }, 3000)
       } else {
@@ -164,9 +123,8 @@ export const LoginForm = ({ onToggleForm }) => {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Reset Password</CardTitle>
           <CardDescription>
-            {resetStep === 1 && "Enter your email to begin password reset"}
-            {resetStep === 2 && "Answer your security question"}
-            {resetStep === 3 && "Create your new password"}
+            {resetStep === 1 && "Enter your phone number to begin password reset"}
+            {resetStep === 2 && "Set your new password"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -185,66 +143,27 @@ export const LoginForm = ({ onToggleForm }) => {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="forgotEmail" className="text-sm font-medium">
-                  Email
+                <label htmlFor="forgotPhone" className="text-sm font-medium">
+                  Phone Number
                 </label>
                 <Input
-                  id="forgotEmail"
-                  type="email"
-                  value={forgotPasswordEmail}
-                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  id="forgotPhone"
+                  type="tel"
+                  value={forgotPasswordPhone}
+                  onChange={(e) => setForgotPasswordPhone(e.target.value)}
+                  placeholder="Enter your phone number"
                   required
                 />
               </div>
 
               <Button type="submit" className="w-full" disabled={forgotPasswordLoading}>
-                {forgotPasswordLoading ? "Checking..." : "Continue"}
+                {forgotPasswordLoading ? "Verifying..." : "Continue"}
               </Button>
             </form>
           )}
 
           {resetStep === 2 && (
             <form onSubmit={handleForgotPasswordStep2} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-destructive bg-destructive-10 border border-destructive-20 rounded-md">
-                  {error}
-                </div>
-              )}
-
-              {forgotPasswordMessage && (
-                <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md">
-                  {forgotPasswordMessage}
-                </div>
-              )}
-
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-1">Security Question:</p>
-                <p className="text-blue-800">{securityQuestion}</p>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="securityAnswer" className="text-sm font-medium">
-                  Your Answer
-                </label>
-                <Input
-                  id="securityAnswer"
-                  type="text"
-                  value={securityAnswer}
-                  onChange={(e) => setSecurityAnswer(e.target.value)}
-                  placeholder="Enter your answer"
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={forgotPasswordLoading}>
-                {forgotPasswordLoading ? "Verifying..." : "Verify Answer"}
-              </Button>
-            </form>
-          )}
-
-          {resetStep === 3 && (
-            <form onSubmit={handleForgotPasswordStep3} className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive-10 border border-destructive-20 rounded-md">
                   {error}
@@ -298,8 +217,7 @@ export const LoginForm = ({ onToggleForm }) => {
               onClick={() => {
                 setShowForgotPassword(false)
                 setResetStep(1)
-                setForgotPasswordEmail("")
-                setSecurityAnswer("")
+                setForgotPasswordPhone("")
                 setNewPassword("")
                 setConfirmNewPassword("")
                 setError("")
