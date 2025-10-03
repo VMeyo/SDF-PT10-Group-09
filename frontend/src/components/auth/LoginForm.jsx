@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext"
 import { Button } from "../ui/Button"
 import { Input } from "../ui/Input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/Card"
+import { API_BASE } from "../../utils/api"
 
 export const LoginForm = ({ onToggleForm }) => {
   const [email, setEmail] = useState("")
@@ -19,8 +20,6 @@ export const LoginForm = ({ onToggleForm }) => {
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("")
   const { login } = useAuth()
-
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -43,7 +42,7 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-phone`, {
+      const response = await fetch(`${API_BASE}/auth/verify-phone`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +83,7 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/reset-password-phone`, {
+      const response = await fetch(`${API_BASE}/auth/reset-password-phone`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

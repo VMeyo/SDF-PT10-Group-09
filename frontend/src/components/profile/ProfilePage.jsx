@@ -121,7 +121,7 @@ export const ProfilePage = ({ onBack }) => {
       const response = await authAPI.changePassword(
         passwordData.currentPassword,
         passwordData.newPassword,
-        passwordData.confirmPassword,
+        passwordData.newPassword,
       )
 
       if (response.ok) {
