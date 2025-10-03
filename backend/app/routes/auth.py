@@ -317,6 +317,7 @@ def password_reset(token):
 
 # ---------------------
 # Change password (Authenticated user)
+# PUT /api/v1/auth/change-password
 # ---------------------
 @auth_bp.route("/change-password", methods=["PUT"])
 @jwt_required()
@@ -342,6 +343,7 @@ def change_password():
     if not user.check_password(current_password):
         return jsonify({"msg": "Incorrect current password"}), 401
 
+    # Use the User model's password setter
     user.password = new_password
     db.session.commit()
 

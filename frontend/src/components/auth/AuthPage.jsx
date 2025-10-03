@@ -2,27 +2,26 @@
 
 import { useState } from "react"
 import { useAuth } from "../../contexts/AuthContext"
+import { API_BASE } from "../../utils/api"
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetStep, setResetStep] = useState(1) // 1: enter phone, 2: enter new password
   const [formData, setFormData] = useState({
-    name: "", // Added name field for signup
+    name: "",
     email: "",
-    phone: "", // Added phone field to match backend requirements
+    phone: "",
     password: "",
     confirmPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
   const { login, signup } = useAuth()
-
-  const API_BASE =
-    typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL
-      ? import.meta.env.VITE_API_BASE_URL
-      : "/api/v1"
 
   const handleInputChange = (e) => {
     setFormData({
@@ -76,11 +75,13 @@ export const AuthPage = () => {
         if (!isLogin) {
           setSuccess("Account created successfully! You can now sign in.")
           setFormData({
-            name: "", // Reset name field
+            name: "",
             email: "",
-            phone: "", // Reset phone field
+            phone: "",
             password: "",
             confirmPassword: "",
+            newPassword: "",
+            confirmNewPassword: "",
           })
           setTimeout(() => {
             setIsLogin(true)
@@ -99,39 +100,98 @@ export const AuthPage = () => {
 
   const handleForgotPassword = async (e) => {
     e.preventDefault()
-    if (!formData.email) {
-      setError("Please enter your email address")
-      return
-    }
 
-    setLoading(true)
-    setError("")
-
-    try {
-      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email: formData.email }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setSuccess("Password reset instructions sent to your email")
-        setTimeout(() => {
-          setShowForgotPassword(false)
-          setSuccess("")
-        }, 3000)
-      } else {
-        setError(data.message || "Failed to send reset email")
+    if (resetStep === 1) {
+      // Step 1: Verify phone number
+      if (!formData.phone) {
+        setError("Please enter your phone number")
+        return
       }
-    } catch (err) {
-      setError("Network error. Please try again.")
-    }
 
-    setLoading(false)
+      setLoading(true)
+      setError("")
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/verify-phone`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phone: formData.phone }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          setSuccess("Phone number verified! Please enter your new password.")
+          setResetStep(2)
+        } else {
+          setError(data.message || "Phone number not found")
+        }
+      } catch (err) {
+        setError("Network error. Please try again.")
+      }
+
+      setLoading(false)
+    } else if (resetStep === 2) {
+      // Step 2: Reset password
+      if (!formData.newPassword || !formData.confirmNewPassword) {
+        setError("Please enter and confirm your new password")
+        return
+      }
+
+      if (formData.newPassword.length < 6) {
+        setError("Password must be at least 6 characters long")
+        return
+      }
+
+      if (formData.newPassword !== formData.confirmNewPassword) {
+        setError("Passwords do not match")
+        return
+      }
+
+      setLoading(true)
+      setError("")
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/reset-password-phone`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: formData.phone,
+            newPassword: formData.newPassword,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          setSuccess("Password reset successfully! Redirecting to sign in...")
+          setTimeout(() => {
+            setShowForgotPassword(false)
+            setResetStep(1)
+            setSuccess("")
+            setFormData({
+              name: "",
+              email: "",
+              phone: "",
+              password: "",
+              confirmPassword: "",
+              newPassword: "",
+              confirmNewPassword: "",
+            })
+          }, 2000)
+        } else {
+          setError(data.message || "Failed to reset password")
+        }
+      } catch (err) {
+        setError("Network error. Please try again.")
+      }
+
+      setLoading(false)
+    }
   }
 
   if (showForgotPassword) {
@@ -154,14 +214,20 @@ export const AuthPage = () => {
                 <br />
                 <span className="hero-accent">Secure Access</span>
               </h2>
-              <p>Enter your email address and we'll send you instructions to reset your password.</p>
+              <p>
+                {resetStep === 1
+                  ? "Enter your phone number to verify your account and reset your password."
+                  : "Enter your new password to complete the reset process."}
+              </p>
             </div>
           </div>
 
           {/* Right side - Access Portal */}
           <div className="access-portal">
             <h3>Reset Password</h3>
-            <p className="subtitle">Enter your email to receive reset instructions</p>
+            <p className="subtitle">
+              {resetStep === 1 ? "Enter your phone number to verify your account" : "Create a new password"}
+            </p>
 
             {error && (
               <div
@@ -196,21 +262,57 @@ export const AuthPage = () => {
             )}
 
             <form onSubmit={handleForgotPassword}>
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="form-input"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+              {resetStep === 1 ? (
+                <div className="form-group">
+                  <label className="form-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    className="form-input"
+                    placeholder="Enter your phone number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      className="form-input"
+                      placeholder="Enter new password"
+                      value={formData.newPassword}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <input
+                      type="password"
+                      name="confirmNewPassword"
+                      className="form-input"
+                      placeholder="Confirm new password"
+                      value={formData.confirmNewPassword}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </>
+              )}
 
               <button type="submit" className="gradient-button" disabled={loading}>
-                {loading ? "Sending..." : "Send Reset Instructions"}
+                {loading
+                  ? resetStep === 1
+                    ? "Verifying..."
+                    : "Resetting..."
+                  : resetStep === 1
+                    ? "Verify Phone Number"
+                    : "Reset Password"}
               </button>
             </form>
 
@@ -220,6 +322,7 @@ export const AuthPage = () => {
                 onClick={(e) => {
                   e.preventDefault()
                   setShowForgotPassword(false)
+                  setResetStep(1)
                   setError("")
                   setSuccess("")
                 }}
@@ -240,7 +343,7 @@ export const AuthPage = () => {
         <div>
           <div className="ajali-logo">
             <div className="ajali-logo-icon">
-              <img src="./ajali.svg" alt="ajali logo"/>
+              <img src="./ajali.svg" alt="ajali logo" />
             </div>
             <div className="ajali-logo-text">
               <h1>Ajali</h1>
@@ -446,11 +549,13 @@ export const AuthPage = () => {
                 setError("")
                 setSuccess("")
                 setFormData({
-                  name: "", // Reset name field when switching modes
+                  name: "",
                   email: "",
-                  phone: "", // Reset phone field when switching modes
+                  phone: "",
                   password: "",
                   confirmPassword: "",
+                  newPassword: "",
+                  confirmNewPassword: "",
                 })
               }}
             >
