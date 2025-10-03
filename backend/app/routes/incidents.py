@@ -5,6 +5,9 @@ from app.models import Incident, Media, User
 
 incidents_bp = Blueprint("incidents_bp", __name__, url_prefix="/api/v1/incidents")
 
+# Allowed status values
+ALLOWED_STATUSES = ["pending", "in_progress", "approved", "rejected"]
+
 
 # -------------------------------------------------
 # Helper: format media list
@@ -15,12 +18,21 @@ def format_media_list(incident):
         {
             "id": m.id,
             "filename": m.filename,
-            "file_url": m.file_url,       # ✅ Public URL or relative path
+            "file_url": m.file_url,
             "uploaded_by": m.uploaded_by,
             "created_at": m.created_at
         }
         for m in incident.media
     ]
+
+
+# -------------------------------------------------
+# Helper: check if user is admin
+# -------------------------------------------------
+def is_admin(user_id):
+    """Check if the user is an admin."""
+    user = User.query.get(user_id)
+    return user and user.role == "admin"
 
 
 # -------------------------------------------------
@@ -84,7 +96,7 @@ def get_incident(incident_id):
 @jwt_required()
 def create_incident():
     data = request.get_json()
-    user_id = int(get_jwt_identity())  # ✅ ensure it's int
+    user_id = int(get_jwt_identity())
 
     new_incident = Incident(
         title=data.get("title"),
@@ -110,10 +122,10 @@ def create_incident():
 @jwt_required()
 def update_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
-    user_id = int(get_jwt_identity())  # ✅ cast to int
+    user_id = int(get_jwt_identity())
 
-    # Authorization check
-    if incident.created_by != user_id:
+    # Authorization check: owner or admin
+    if incident.created_by != user_id and not is_admin(user_id):
         return jsonify({"msg": "Unauthorized"}), 403
 
     data = request.get_json()
@@ -121,10 +133,75 @@ def update_incident(incident_id):
     incident.description = data.get("description", incident.description)
     incident.latitude = data.get("latitude", incident.latitude)
     incident.longitude = data.get("longitude", incident.longitude)
-    incident.status = data.get("status", incident.status)
+    
+    # Only allow status update if admin
+    if "status" in data:
+        if not is_admin(user_id):
+            return jsonify({"msg": "Only admins can update incident status"}), 403
+        
+        new_status = data.get("status")
+        if new_status not in ALLOWED_STATUSES:
+            return jsonify({"msg": f"Invalid status. Allowed: {ALLOWED_STATUSES}"}), 400
+        
+        # Award points if status moves to approved
+        if new_status == "approved" and incident.status != "approved":
+            incident_user = User.query.get(incident.created_by)
+            if incident_user:
+                incident_user.points += 10  # Award 10 points for approved incident
+        
+        incident.status = new_status
 
     db.session.commit()
     return jsonify({"msg": "Incident updated"}), 200
+
+
+# -------------------------------------------------
+# UPDATE incident status (Admin only)
+# PATCH /api/v1/incidents/<id>/status
+# -------------------------------------------------
+@incidents_bp.route("/<int:incident_id>/status", methods=["PATCH"])
+@jwt_required()
+def update_incident_status(incident_id):
+    user_id = int(get_jwt_identity())
+    
+    # Check if user is admin
+    if not is_admin(user_id):
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    incident = Incident.query.get_or_404(incident_id)
+    data = request.get_json()
+    new_status = data.get("status")
+    
+    if not new_status:
+        return jsonify({"msg": "Status is required"}), 400
+    
+    if new_status not in ALLOWED_STATUSES:
+        return jsonify({
+            "msg": f"Invalid status. Allowed statuses are: {', '.join(ALLOWED_STATUSES)}"
+        }), 400
+    
+    old_status = incident.status
+    incident.status = new_status
+    
+    # Award points if status moves to approved
+    if new_status == "approved" and old_status != "approved":
+        incident_user = User.query.get(incident.created_by)
+        if incident_user:
+            incident_user.points += 10
+    
+    # Deduct points if previously approved incident is rejected
+    elif new_status == "rejected" and old_status == "approved":
+        incident_user = User.query.get(incident.created_by)
+        if incident_user and incident_user.points >= 10:
+            incident_user.points -= 10
+    
+    db.session.commit()
+    
+    return jsonify({
+        "msg": f"Incident status updated from '{old_status}' to '{new_status}'",
+        "incident_id": incident.id,
+        "new_status": new_status
+    }), 200
 
 
 # -------------------------------------------------
@@ -135,10 +212,10 @@ def update_incident(incident_id):
 @jwt_required()
 def delete_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
-    user_id = int(get_jwt_identity())  # ✅ cast to int
+    user_id = int(get_jwt_identity())
 
-    # Authorization check
-    if incident.created_by != user_id:
+    # Authorization check: owner or admin
+    if incident.created_by != user_id and not is_admin(user_id):
         return jsonify({"msg": "Unauthorized"}), 403
 
     db.session.delete(incident)
