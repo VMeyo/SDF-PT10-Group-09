@@ -21,27 +21,11 @@ export const ProfilePage = ({ onBack }) => {
     newPassword: "",
     confirmPassword: "",
   })
-  const [securityData, setSecurityData] = useState({
-    question: "",
-    answer: "",
-  })
-  const [showSecuritySetup, setShowSecuritySetup] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
-
-  const securityQuestions = [
-    "What was the name of your first pet?",
-    "What city were you born in?",
-    "What is your mother's maiden name?",
-    "What was the name of your elementary school?",
-    "What is your favorite book?",
-    "What was your childhood nickname?",
-    "In what city did you meet your spouse/partner?",
-    "What is the name of your favorite childhood friend?",
-  ]
 
   useEffect(() => {
     fetchUserProfile()
@@ -80,9 +64,6 @@ export const ProfilePage = ({ onBack }) => {
           email: profileData.email || "",
           phone: profileData.phone || "",
         })
-        if (profileData.security_question) {
-          setSecurityData({ ...securityData, question: profileData.security_question })
-        }
       } else {
         console.error("Failed to fetch profile")
         setUserData(user)
@@ -156,59 +137,6 @@ export const ProfilePage = ({ onBack }) => {
       }
     } catch (error) {
       setError("Error updating password")
-    } finally {
-      setUpdating(false)
-    }
-  }
-
-  const handleSecurityQuestionSetup = async (e) => {
-    e.preventDefault()
-    setError("")
-    setMessage("")
-
-    if (!securityData.question || !securityData.answer) {
-      setError("Please select a question and provide an answer")
-      return
-    }
-
-    if (securityData.answer.length < 3) {
-      setError("Answer must be at least 3 characters long")
-      return
-    }
-
-    setUpdating(true)
-
-    try {
-      const endpoint = userData?.security_question ? "/auth/security-question" : "/auth/setup-security-question"
-      const method = userData?.security_question ? "PUT" : "POST"
-
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method: method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          security_question: securityData.question,
-          security_answer: securityData.answer,
-        }),
-      })
-
-      if (response.ok) {
-        setMessage(
-          userData?.security_question
-            ? "Security question updated successfully"
-            : "Security question set up successfully",
-        )
-        setShowSecuritySetup(false)
-        setSecurityData({ ...securityData, answer: "" })
-        fetchUserProfile()
-      } else {
-        const errorData = await response.json()
-        setError(errorData.msg || errorData.message || "Failed to set up security question")
-      }
-    } catch (error) {
-      setError("Error setting up security question")
     } finally {
       setUpdating(false)
     }
@@ -347,9 +275,10 @@ export const ProfilePage = ({ onBack }) => {
                   <button
                     type="submit"
                     disabled={updating}
-                    className="w-full sm:w-auto px-6 py-3 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       background: "linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end))",
+                      color: "white",
                     }}
                   >
                     {updating ? "Saving..." : "Save Changes"}
@@ -454,109 +383,6 @@ export const ProfilePage = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Security Question Section */}
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Security Question</h2>
-              {securityData.question && !showSecuritySetup && (
-                <button
-                  onClick={() => setShowSecuritySetup(true)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Update Question
-                </button>
-              )}
-            </div>
-
-            {securityData.question && !showSecuritySetup ? (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-green-600 text-lg">✓</span>
-                  <p className="text-sm font-medium text-green-800">Security question is set up</p>
-                </div>
-                <p className="text-sm text-green-700">
-                  You can use your security question to reset your password if you forget it.
-                </p>
-              </div>
-            ) : (
-              <>
-                {!securityData.question && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-yellow-600 text-lg">⚠</span>
-                      <p className="text-sm font-medium text-yellow-800">Security question not set</p>
-                    </div>
-                    <p className="text-sm text-yellow-700">
-                      Set up a security question to help recover your account if you forget your password.
-                    </p>
-                  </div>
-                )}
-
-                <form onSubmit={handleSecurityQuestionSetup} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Security Question</label>
-                    <select
-                      value={securityData.question}
-                      onChange={(e) => setSecurityData({ ...securityData, question: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-                      required
-                    >
-                      <option value="">Choose a question...</option>
-                      {securityQuestions.map((q, index) => (
-                        <option key={index} value={q}>
-                          {q}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Your Answer</label>
-                    <input
-                      type="text"
-                      value={securityData.answer}
-                      onChange={(e) => setSecurityData({ ...securityData, answer: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-                      placeholder="Enter your answer"
-                      required
-                      minLength={3}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Remember this answer - you'll need it to reset your password
-                    </p>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      type="submit"
-                      disabled={updating}
-                      className="px-6 py-3 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        background: "linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end))",
-                      }}
-                    >
-                      {updating ? "Saving..." : "Save Security Question"}
-                    </button>
-                    {showSecuritySetup && securityData.question && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowSecuritySetup(false)
-                          setSecurityData({ ...securityData, answer: "" })
-                        }}
-                        className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-
         {/* Password Update Section */}
         <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="p-6">
@@ -601,9 +427,10 @@ export const ProfilePage = ({ onBack }) => {
               <button
                 type="submit"
                 disabled={updating}
-                className="w-full sm:w-auto px-6 py-3 text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "linear-gradient(135deg, var(--ajali-gradient-start), var(--ajali-gradient-end))",
+                  color: "white",
                 }}
               >
                 {updating ? "Updating..." : "Update Password"}

@@ -35,14 +35,8 @@ export const UserDashboard = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen)
   }
 
-  useEffect(() => {
-    fetchUserData()
-  }, [])
-
-  const fetchReporterData = async (userId) => {
-    if (reportersData[userId]) {
-      return reportersData[userId]
-    }
+  const fetchUserName = async (userId) => {
+    if (!userId || reportersData[userId]) return reportersData[userId] || null
 
     try {
       const response = await fetch(`${API_BASE}/users/${userId}`, {
@@ -54,14 +48,27 @@ export const UserDashboard = () => {
 
       if (response.ok) {
         const userData = await response.json()
-        setReportersData((prev) => ({ ...prev, [userId]: userData }))
-        return userData
+        const userName = userData.name || userData.username || userData.email
+        setReportersData((prev) => ({ ...prev, [userId]: userName }))
+        return userName
       }
     } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
+      console.error(`[v0] Error fetching user ${userId}:`, error)
     }
+
     return null
   }
+
+  useEffect(() => {
+    fetchUserData()
+  }, [])
+
+  useEffect(() => {
+    if (selectedIncidentId === null && !loading && activeTab === "overview") {
+      // User just came back from detail view, refetch to get updates
+      fetchUserData()
+    }
+  }, [selectedIncidentId])
 
   const fetchUserData = async () => {
     try {
@@ -147,10 +154,6 @@ export const UserDashboard = () => {
       let allIncidents = []
       if (allIncidentsRes.ok) {
         allIncidents = await allIncidentsRes.json()
-        const uniqueUserIds = [...new Set(allIncidents.map((i) => i.created_by || i.user_id).filter(Boolean))].filter(
-          (userId) => userId !== currentUserId,
-        )
-        uniqueUserIds.forEach((userId) => fetchReporterData(userId))
       } else {
         console.log("[v0] Failed to fetch all incidents, using empty array")
       }
@@ -203,7 +206,7 @@ export const UserDashboard = () => {
 
   const handleBackFromIncidentDetail = () => {
     setSelectedIncidentId(null)
-    setActiveTab("incidents")
+    setActiveTab("overview")
   }
 
   const userTabs = [
@@ -219,6 +222,17 @@ export const UserDashboard = () => {
     },
     { id: "profile", label: "Profile", icon: "👤", description: "Manage your account settings" },
   ]
+
+  useEffect(() => {
+    if (userStats?.allIncidents) {
+      userStats.allIncidents.forEach((incident) => {
+        const userId = incident.created_by || incident.user_id
+        if (userId && !reportersData[userId]) {
+          fetchUserName(userId)
+        }
+      })
+    }
+  }, [userStats?.allIncidents])
 
   if (loading) {
     return (
@@ -540,16 +554,33 @@ export const UserDashboard = () => {
                             }
 
                             const reporterId = report.created_by || report.user_id
-                            const reporterInfo = reportersData[reporterId]
-                            const reporterName =
-                              reporterInfo?.name ||
-                              reporterInfo?.username ||
-                              report.reporter_name ||
-                              "Anonymous Reporter"
+                            const reporterName = report.reporter_name || reportersData[reporterId] || "Loading..."
+
+                            const mediaArray = report.media || []
+                            const firstImage = mediaArray.find(
+                              (m) => m.file_type?.startsWith("image/") || m.file_url?.match(/\.(jpg|jpeg|png|gif)$/i),
+                            )
+                            const remainingMedia = mediaArray.filter((m) => m !== firstImage).slice(0, 3)
 
                             return (
                               <div key={report.id} className="modern-report-card">
-                                <div className={`modern-card-header ${getGradientClass(report.severity)}`}>
+                                <div
+                                  className={`modern-card-header ${getGradientClass(report.severity)}`}
+                                  style={
+                                    firstImage
+                                      ? {
+                                          backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${
+                                            firstImage.file_url?.startsWith("http")
+                                              ? firstImage.file_url
+                                              : `${API_BASE.replace("/api/v1", "")}${firstImage.file_url}`
+                                          })`,
+                                          backgroundSize: "cover",
+                                          backgroundPosition: "center",
+                                          backgroundRepeat: "no-repeat",
+                                        }
+                                      : {}
+                                  }
+                                >
                                   <div className="header-top">
                                     <div className="status-indicator">
                                       <div className={`status-dot ${report.severity || "medium"}`}></div>
@@ -560,10 +591,27 @@ export const UserDashboard = () => {
                                         </div>
                                       )}
                                     </div>
-                                    {report.media && report.media.length > 0 ? (
-                                      <div className="header-media-preview">
-                                        {report.media.slice(0, 2).map((media, idx) => (
-                                          <div key={idx} className="header-media-item">
+                                    {remainingMedia.length > 0 && (
+                                      <div
+                                        className="header-media-circles"
+                                        style={{
+                                          display: "flex",
+                                          gap: "8px",
+                                          alignItems: "center",
+                                        }}
+                                      >
+                                        {remainingMedia.map((media, idx) => (
+                                          <div
+                                            key={idx}
+                                            style={{
+                                              width: "40px",
+                                              height: "40px",
+                                              borderRadius: "50%",
+                                              overflow: "hidden",
+                                              border: "2px solid white",
+                                              backgroundColor: "#f3f4f6",
+                                            }}
+                                          >
                                             {media.file_type?.startsWith("image/") ||
                                             media.file_url?.match(/\.(jpg|jpeg|png|gif)$/i) ? (
                                               <img
@@ -572,40 +620,56 @@ export const UserDashboard = () => {
                                                     ? media.file_url
                                                     : `${API_BASE.replace("/api/v1", "")}${media.file_url}`
                                                 }
-                                                alt={`Evidence ${idx + 1}`}
+                                                alt={`Media ${idx + 1}`}
                                                 style={{
-                                                  width: "60px",
-                                                  height: "60px",
+                                                  width: "100%",
+                                                  height: "100%",
                                                   objectFit: "cover",
-                                                  borderRadius: "8px",
                                                   display: "block",
                                                 }}
                                                 onError={(e) => {
-                                                  console.error("[v0] Image load error:", media.file_url)
                                                   e.target.style.display = "none"
                                                   e.target.parentElement.innerHTML =
-                                                    '<div style="width:60px;height:60px;background:#f3f4f6;borderRadius:8px;display:flex;alignItems:center;justifyContent:center"><span>📷</span></div>'
+                                                    '<div style="width:100%;height:100%;display:flex;alignItems:center;justifyContent:center;fontSize:16px">📷</div>'
                                                 }}
                                               />
                                             ) : (
                                               <div
                                                 style={{
-                                                  width: "60px",
-                                                  height: "60px",
-                                                  background: "#f3f4f6",
-                                                  borderRadius: "8px",
+                                                  width: "100%",
+                                                  height: "100%",
                                                   display: "flex",
                                                   alignItems: "center",
                                                   justifyContent: "center",
+                                                  fontSize: "16px",
                                                 }}
                                               >
-                                                <span>📎</span>
+                                                📎
                                               </div>
                                             )}
                                           </div>
                                         ))}
+                                        {mediaArray.length > 4 && (
+                                          <div
+                                            style={{
+                                              width: "40px",
+                                              height: "40px",
+                                              borderRadius: "50%",
+                                              border: "2px solid white",
+                                              backgroundColor: "rgba(255,255,255,0.9)",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                              fontSize: "12px",
+                                              fontWeight: "bold",
+                                              color: "#333",
+                                            }}
+                                          >
+                                            +{mediaArray.length - 4}
+                                          </div>
+                                        )}
                                       </div>
-                                    ) : null}
+                                    )}
                                     <div className="header-center">
                                       <div className="star-icon">⭐</div>
                                       <div className="media-count-text">{mediaCount} media files</div>
@@ -660,6 +724,28 @@ export const UserDashboard = () => {
                                     <div className={`status-badge-small ${report.status || "pending"}`}>
                                       {report.status === "resolved" ? "Verified" : "Responding"}
                                     </div>
+                                  </div>
+
+                                  <div style={{ marginTop: "1rem" }}>
+                                    <button
+                                      onClick={() => handleViewIncidentDetail(report.id)}
+                                      style={{
+                                        width: "100%",
+                                        padding: "0.75rem",
+                                        backgroundColor: "#3b82f6",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "0.5rem",
+                                        fontSize: "0.875rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        transition: "background-color 0.2s",
+                                      }}
+                                      onMouseOver={(e) => (e.target.style.backgroundColor = "#2563eb")}
+                                      onMouseOut={(e) => (e.target.style.backgroundColor = "#3b82f6")}
+                                    >
+                                      View Details
+                                    </button>
                                   </div>
                                 </div>
                               </div>

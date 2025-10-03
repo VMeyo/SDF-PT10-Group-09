@@ -19,10 +19,8 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
-  const fetchReporterData = async (userId) => {
-    if (reportersData[userId]) {
-      return reportersData[userId]
-    }
+  const fetchUserName = async (userId) => {
+    if (!userId || reportersData[userId]) return reportersData[userId] || null
 
     try {
       const response = await fetch(`${API_BASE}/users/${userId}`, {
@@ -34,18 +32,24 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
 
       if (response.ok) {
         const userData = await response.json()
-        setReportersData((prev) => ({ ...prev, [userId]: userData }))
-        return userData
+        const userName = userData.name || userData.username || userData.email
+        setReportersData((prev) => ({ ...prev, [userId]: userName }))
+        return userName
       }
     } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
+      console.error(`[v0] Error fetching user ${userId}:`, error)
     }
+
     return null
   }
 
   useEffect(() => {
-    const uniqueUserIds = [...new Set(incidents.map((i) => i.created_by || i.user_id).filter(Boolean))]
-    uniqueUserIds.forEach((userId) => fetchReporterData(userId))
+    incidents.forEach((incident) => {
+      const userId = incident.created_by || incident.user_id
+      if (userId && !reportersData[userId]) {
+        fetchUserName(userId)
+      }
+    })
   }, [incidents])
 
   useEffect(() => {
@@ -244,9 +248,7 @@ export const IncidentList = ({ incidents, onViewDetail, onIncidentUpdated, onInc
         {filteredIncidents.map((incident) => {
           const mediaCount = incident.media_count || incident.media?.length || 0
           const reporterId = incident.created_by || incident.user_id
-          const reporterInfo = reportersData[reporterId]
-          const reporterName =
-            reporterInfo?.name || reporterInfo?.username || incident.reporter_name || "Anonymous Reporter"
+          const reporterName = incident.reporter_name || reportersData[reporterId] || "Loading..."
 
           const isOwner = String(reporterId) === String(user?.id)
           const canEdit = isOwner && incident.status !== "resolved"

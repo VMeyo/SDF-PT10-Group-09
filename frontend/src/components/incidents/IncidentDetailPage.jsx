@@ -227,36 +227,6 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
     fetchIncidentDetails()
   }, [incidentId])
 
-  const fetchReporterData = async (userId) => {
-    try {
-      console.log("[v0] Fetching reporter data for user ID:", userId)
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        setReporterData(userData)
-        console.log("[v0] Reporter data fetched:", userData)
-      } else {
-        console.error("[v0] Failed to fetch reporter data, status:", response.status)
-        if (userId === user?.id) {
-          setReporterData(user)
-          console.log("[v0] Using current user data as fallback:", user)
-        }
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching reporter data:", error)
-      if (userId === user?.id) {
-        setReporterData(user)
-        console.log("[v0] Using current user data as fallback after error:", user)
-      }
-    }
-  }
-
   const fetchIncidentDetails = async () => {
     try {
       console.log("[v0] Fetching incident details for ID:", incidentId)
@@ -284,12 +254,9 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
         console.log("[v0] Incident data received:", incidentData)
         setIncident(incidentData)
 
-        const reporterUserId = incidentData.created_by || incidentData.user_id
-        if (reporterUserId) {
-          fetchReporterData(reporterUserId)
-        } else if (user) {
+        if (user) {
           setReporterData(user)
-          console.log("[v0] No reporter ID in incident, using current user:", user)
+          console.log("[v0] Using current user data:", user)
         }
       } else {
         setError(`Failed to load incident (Status: ${incidentRes.status})`)
@@ -609,15 +576,16 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               <CardContent>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm">
-                    {(reporterData?.name || reporterData?.username || incident?.reporter_name || "U")
+                    {(incident?.reporter_name || reporterData?.name || reporterData?.username || "U")
                       .charAt(0)
                       .toUpperCase()}
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">
-                      {reporterData?.name ||
+                      {incident?.reporter_name ||
+                        reporterData?.name ||
                         reporterData?.username ||
-                        incident?.reporter_name ||
+                        reporterData?.email ||
                         (incident?.created_by ? `User #${incident.created_by}` : "Anonymous Reporter")}
                     </div>
                     <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg inline-block">
