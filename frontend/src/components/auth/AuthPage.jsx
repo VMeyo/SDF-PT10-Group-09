@@ -7,13 +7,15 @@ import { API_BASE } from "../../utils/api"
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [resetStep, setResetStep] = useState(1) // 1: enter phone, 2: enter new password
+  const [resetStep, setResetStep] = useState(1) // 1: enter email, 2: check email message, 3: enter new password with token
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
+    resetEmail: "",
+    resetToken: "",
     newPassword: "",
     confirmNewPassword: "",
   })
@@ -80,6 +82,8 @@ export const AuthPage = () => {
             phone: "",
             password: "",
             confirmPassword: "",
+            resetEmail: "",
+            resetToken: "",
             newPassword: "",
             confirmNewPassword: "",
           })
@@ -102,9 +106,14 @@ export const AuthPage = () => {
     e.preventDefault()
 
     if (resetStep === 1) {
-      // Step 1: Verify phone number
-      if (!formData.phone) {
-        setError("Please enter your phone number")
+      if (!formData.resetEmail) {
+        setError("Please enter your email address")
+        return
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.resetEmail)) {
+        setError("Please enter a valid email address")
         return
       }
 
@@ -112,29 +121,33 @@ export const AuthPage = () => {
       setError("")
 
       try {
-        const response = await fetch(`${API_BASE}/auth/verify-phone`, {
+        const response = await fetch(`${API_BASE}/auth/forgot-password`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ phone: formData.phone }),
+          body: JSON.stringify({ email: formData.resetEmail }),
         })
 
         const data = await response.json()
 
         if (response.ok) {
-          setSuccess("Phone number verified! Please enter your new password.")
+          setSuccess("Password reset email sent! Please check your inbox and follow the instructions.")
           setResetStep(2)
         } else {
-          setError(data.message || "Phone number not found")
+          setError(data.message || data.msg || "Failed to send reset email")
         }
       } catch (err) {
         setError("Network error. Please try again.")
       }
 
       setLoading(false)
-    } else if (resetStep === 2) {
-      // Step 2: Reset password
+    } else if (resetStep === 3) {
+      if (!formData.resetToken) {
+        setError("Please enter the reset token from your email")
+        return
+      }
+
       if (!formData.newPassword || !formData.confirmNewPassword) {
         setError("Please enter and confirm your new password")
         return
@@ -154,14 +167,13 @@ export const AuthPage = () => {
       setError("")
 
       try {
-        const response = await fetch(`${API_BASE}/auth/reset-password-phone`, {
+        const response = await fetch(`${API_BASE}/auth/reset-password/${formData.resetToken}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            phone: formData.phone,
-            newPassword: formData.newPassword,
+            new_password: formData.newPassword,
           }),
         })
 
@@ -179,12 +191,14 @@ export const AuthPage = () => {
               phone: "",
               password: "",
               confirmPassword: "",
+              resetEmail: "",
+              resetToken: "",
               newPassword: "",
               confirmNewPassword: "",
             })
           }, 2000)
         } else {
-          setError(data.message || "Failed to reset password")
+          setError(data.message || data.msg || "Failed to reset password. Token may be invalid or expired.")
         }
       } catch (err) {
         setError("Network error. Please try again.")
@@ -201,7 +215,7 @@ export const AuthPage = () => {
           {/* Left side - Main content */}
           <div>
             <div className="ajali-logo">
-              <div className="ajali-logo-icon">⚠</div>
+              <div className="ajali-logo-icon">⚠️</div>
               <div className="ajali-logo-text">
                 <h1>Ajali</h1>
                 <p>Emergency Response System</p>
@@ -215,9 +229,9 @@ export const AuthPage = () => {
                 <span className="hero-accent">Secure Access</span>
               </h2>
               <p>
-                {resetStep === 1
-                  ? "Enter your phone number to verify your account and reset your password."
-                  : "Enter your new password to complete the reset process."}
+                {resetStep === 1 && "Enter your email address to receive a password reset link."}
+                {resetStep === 2 && "Check your email for the reset link and token."}
+                {resetStep === 3 && "Enter the token from your email and create a new password."}
               </p>
             </div>
           </div>
@@ -226,7 +240,9 @@ export const AuthPage = () => {
           <div className="access-portal">
             <h3>Reset Password</h3>
             <p className="subtitle">
-              {resetStep === 1 ? "Enter your phone number to verify your account" : "Create a new password"}
+              {resetStep === 1 && "Enter your email address to get started"}
+              {resetStep === 2 && "Check your email inbox"}
+              {resetStep === 3 && "Enter your reset token and new password"}
             </p>
 
             {error && (
@@ -262,21 +278,68 @@ export const AuthPage = () => {
             )}
 
             <form onSubmit={handleForgotPassword}>
-              {resetStep === 1 ? (
+              {resetStep === 1 && (
                 <div className="form-group">
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Email Address</label>
                   <input
-                    type="tel"
-                    name="phone"
+                    type="email"
+                    name="resetEmail"
                     className="form-input"
-                    placeholder="Enter your phone number"
-                    value={formData.phone}
+                    placeholder="Enter your email address"
+                    value={formData.resetEmail}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
-              ) : (
+              )}
+
+              {resetStep === 2 && (
+                <div className="form-group">
+                  <div
+                    style={{
+                      padding: "16px",
+                      backgroundColor: "#f0f9ff",
+                      borderRadius: "8px",
+                      marginBottom: "16px",
+                      border: "1px solid #bae6fd",
+                    }}
+                  >
+                    <p style={{ marginBottom: "12px", color: "#0369a1" }}>
+                      We've sent a password reset email to <strong>{formData.resetEmail}</strong>
+                    </p>
+                    <p style={{ fontSize: "14px", color: "#0c4a6e" }}>
+                      Click the link in the email or enter the token below to continue.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="gradient-button"
+                    onClick={() => setResetStep(3)}
+                    style={{ marginTop: "8px" }}
+                  >
+                    I have my reset token
+                  </button>
+                </div>
+              )}
+
+              {resetStep === 3 && (
                 <>
+                  <div className="form-group">
+                    <label className="form-label">Reset Token</label>
+                    <input
+                      type="text"
+                      name="resetToken"
+                      className="form-input"
+                      placeholder="Enter the token from your email"
+                      value={formData.resetToken}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <p style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
+                      Check your email for the reset token
+                    </p>
+                  </div>
+
                   <div className="form-group">
                     <label className="form-label">New Password</label>
                     <input
@@ -305,15 +368,17 @@ export const AuthPage = () => {
                 </>
               )}
 
-              <button type="submit" className="gradient-button" disabled={loading}>
-                {loading
-                  ? resetStep === 1
-                    ? "Verifying..."
-                    : "Resetting..."
-                  : resetStep === 1
-                    ? "Verify Phone Number"
-                    : "Reset Password"}
-              </button>
+              {resetStep !== 2 && (
+                <button type="submit" className="gradient-button" disabled={loading}>
+                  {loading
+                    ? resetStep === 1
+                      ? "Sending..."
+                      : "Resetting..."
+                    : resetStep === 1
+                      ? "Send Reset Email"
+                      : "Reset Password"}
+                </button>
+              )}
             </form>
 
             <div className="auth-link">
@@ -364,7 +429,7 @@ export const AuthPage = () => {
 
           <div className="ajali-features">
             <div className="feature-card">
-              <div className="feature-icon red">⚠</div>
+              <div className="feature-icon red">⚠️</div>
               <div className="feature-content">
                 <h3>Instant Reporting</h3>
                 <p>Report accidents quickly</p>
@@ -397,7 +462,7 @@ export const AuthPage = () => {
           </div>
 
           <div className="emergency-notice">
-            <div className="emergency-notice-icon">⚠</div>
+            <div className="emergency-notice-icon">⚠️</div>
             <div className="emergency-notice-content">
               <h4>Emergency Notice</h4>
               <p>
@@ -554,6 +619,8 @@ export const AuthPage = () => {
                   phone: "",
                   password: "",
                   confirmPassword: "",
+                  resetEmail: "",
+                  resetToken: "",
                   newPassword: "",
                   confirmNewPassword: "",
                 })

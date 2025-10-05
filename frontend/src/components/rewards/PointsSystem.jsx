@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../../contexts/AuthContext"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/Card"
-import { Leaderboard } from "./Leaderboard"
 import { RewardsStore } from "./RewardsStore"
+import { userAPI } from "../../utils/api"
 
 export const PointsSystem = () => {
   const { user } = useAuth()
@@ -21,9 +21,7 @@ export const PointsSystem = () => {
 
   const fetchUserPoints = async () => {
     try {
-      const response = await fetch(`${API_BASE}/users/points/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await userAPI.getPoints()
 
       if (response.ok) {
         const data = await response.json()

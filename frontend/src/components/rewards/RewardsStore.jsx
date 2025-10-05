@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/Card"
 import { Button } from "../ui/Button"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/Card"
+import { userAPI } from "../../utils/api"
 
 export const RewardsStore = ({ userPoints, onPointsUpdate }) => {
   const [redeeming, setRedeeming] = useState(null)
@@ -99,18 +100,7 @@ export const RewardsStore = ({ userPoints, onPointsUpdate }) => {
     setRedeemSuccess("")
 
     try {
-      const response = await fetch(`${API_BASE}/users/redeem`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          reward_id: reward.id,
-          points: reward.points,
-        }),
-      })
-
+      const response = await userAPI.redeemReward(reward.id, reward.points)
       const data = await response.json()
 
       if (response.ok) {
@@ -118,7 +108,7 @@ export const RewardsStore = ({ userPoints, onPointsUpdate }) => {
         onPointsUpdate() // Refresh user points
         setTimeout(() => setRedeemSuccess(""), 5000)
       } else {
-        setRedeemError(data.message || "Failed to redeem reward")
+        setRedeemError(data.message || data.msg || "Failed to redeem reward")
         setTimeout(() => setRedeemError(""), 3000)
       }
     } catch (error) {

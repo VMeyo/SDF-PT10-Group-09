@@ -13,8 +13,9 @@ export const LoginForm = ({ onToggleForm }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [resetStep, setResetStep] = useState(1) // 1: phone number, 2: new password
-  const [forgotPasswordPhone, setForgotPasswordPhone] = useState("")
+  const [resetStep, setResetStep] = useState(1) // 1: email, 2: email sent, 3: token + new password
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
+  const [resetToken, setResetToken] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
@@ -41,22 +42,29 @@ export const LoginForm = ({ onToggleForm }) => {
     setError("")
     setForgotPasswordMessage("")
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(forgotPasswordEmail)) {
+      setError("Please enter a valid email address")
+      setForgotPasswordLoading(false)
+      return
+    }
+
     try {
-      const response = await fetch(`${API_BASE}/auth/verify-phone`, {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phone: forgotPasswordPhone }),
+        body: JSON.stringify({ email: forgotPasswordEmail }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
         setResetStep(2)
-        setForgotPasswordMessage("Phone number verified. Please enter your new password.")
+        setForgotPasswordMessage("Password reset email sent! Please check your inbox.")
       } else {
-        setError(data.message || data.msg || "Phone number not found in our system")
+        setError(data.message || data.msg || "Failed to send reset email")
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -67,6 +75,11 @@ export const LoginForm = ({ onToggleForm }) => {
 
   const handleForgotPasswordStep2 = async (e) => {
     e.preventDefault()
+
+    if (!resetToken.trim()) {
+      setError("Please enter the reset token from your email")
+      return
+    }
 
     if (newPassword !== confirmNewPassword) {
       setError("Passwords do not match")
@@ -83,13 +96,12 @@ export const LoginForm = ({ onToggleForm }) => {
     setForgotPasswordMessage("")
 
     try {
-      const response = await fetch(`${API_BASE}/auth/reset-password-phone`, {
+      const response = await fetch(`${API_BASE}/auth/reset-password/${resetToken}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: forgotPasswordPhone,
           new_password: newPassword,
         }),
       })
@@ -101,13 +113,14 @@ export const LoginForm = ({ onToggleForm }) => {
         setTimeout(() => {
           setShowForgotPassword(false)
           setResetStep(1)
-          setForgotPasswordPhone("")
+          setForgotPasswordEmail("")
+          setResetToken("")
           setNewPassword("")
           setConfirmNewPassword("")
           setForgotPasswordMessage("")
         }, 3000)
       } else {
-        setError(data.message || data.msg || "Failed to reset password")
+        setError(data.message || data.msg || "Failed to reset password. Token may be invalid or expired.")
       }
     } catch (error) {
       setError("Network error. Please try again.")
@@ -122,8 +135,9 @@ export const LoginForm = ({ onToggleForm }) => {
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">Reset Password</CardTitle>
           <CardDescription>
-            {resetStep === 1 && "Enter your phone number to begin password reset"}
-            {resetStep === 2 && "Set your new password"}
+            {resetStep === 1 && "Enter your email to receive a password reset link"}
+            {resetStep === 2 && "Check your email for the reset link"}
+            {resetStep === 3 && "Enter your reset token and new password"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,26 +156,49 @@ export const LoginForm = ({ onToggleForm }) => {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="forgotPhone" className="text-sm font-medium">
-                  Phone Number
+                <label htmlFor="forgotEmail" className="text-sm font-medium">
+                  Email Address
                 </label>
                 <Input
-                  id="forgotPhone"
-                  type="tel"
-                  value={forgotPasswordPhone}
-                  onChange={(e) => setForgotPasswordPhone(e.target.value)}
-                  placeholder="Enter your phone number"
+                  id="forgotEmail"
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder="Enter your email address"
                   required
                 />
               </div>
 
               <Button type="submit" className="w-full" disabled={forgotPasswordLoading}>
-                {forgotPasswordLoading ? "Verifying..." : "Continue"}
+                {forgotPasswordLoading ? "Sending..." : "Send Reset Email"}
               </Button>
             </form>
           )}
 
           {resetStep === 2 && (
+            <div className="space-y-4">
+              {forgotPasswordMessage && (
+                <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md">
+                  {forgotPasswordMessage}
+                </div>
+              )}
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-900 mb-2">
+                  We've sent a password reset email to <strong>{forgotPasswordEmail}</strong>
+                </p>
+                <p className="text-xs text-blue-700">
+                  Click the link in the email or enter the token below to continue.
+                </p>
+              </div>
+
+              <Button onClick={() => setResetStep(3)} className="w-full">
+                I have my reset token
+              </Button>
+            </div>
+          )}
+
+          {resetStep === 3 && (
             <form onSubmit={handleForgotPasswordStep2} className="space-y-4">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive-10 border border-destructive-20 rounded-md">
@@ -174,6 +211,21 @@ export const LoginForm = ({ onToggleForm }) => {
                   {forgotPasswordMessage}
                 </div>
               )}
+
+              <div className="space-y-2">
+                <label htmlFor="resetToken" className="text-sm font-medium">
+                  Reset Token
+                </label>
+                <Input
+                  id="resetToken"
+                  type="text"
+                  value={resetToken}
+                  onChange={(e) => setResetToken(e.target.value)}
+                  placeholder="Enter token from email"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">Check your email for the reset token</p>
+              </div>
 
               <div className="space-y-2">
                 <label htmlFor="newPassword" className="text-sm font-medium">
@@ -216,7 +268,8 @@ export const LoginForm = ({ onToggleForm }) => {
               onClick={() => {
                 setShowForgotPassword(false)
                 setResetStep(1)
-                setForgotPasswordPhone("")
+                setForgotPasswordEmail("")
+                setResetToken("")
                 setNewPassword("")
                 setConfirmNewPassword("")
                 setError("")

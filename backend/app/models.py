@@ -12,9 +12,11 @@ class User(db.Model):
     points = db.Column(db.Integer, default=0)
     password_hash = db.Column(db.String(200), nullable=False)
     
-    # Security question fields for password reset
-    security_question = db.Column(db.String(255), nullable=True)
-    security_answer_hash = db.Column(db.String(255), nullable=True)
+    # Additional admin management fields
+    status = db.Column(db.String(20), default="active")  # active, suspended, pending
+    location = db.Column(db.String(255), nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -72,6 +74,19 @@ class Media(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class RewardRedemption(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    reward_name = db.Column(db.String(255), nullable=False)
+    reward_id = db.Column(db.Integer, nullable=True)  # Frontend reward ID
+    points_spent = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(50), default="completed")  # completed, pending, failed
+    redeemed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship("User", backref="redemptions")
 
 
 

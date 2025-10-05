@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user)
         return { success: true }
       } else {
-        return { success: false, error: data.msg || "Login failed" }
+        return { success: false, error: data.message || data.msg || "Login failed" }
       }
     } catch (error) {
       return { success: false, error: "Network error" }
@@ -124,9 +124,9 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (response.ok && data) {
-        return { success: true, message: data.msg || "Account created successfully" }
+        return { success: true, message: data.message || data.msg || "Account created successfully" }
       } else {
-        return { success: false, error: data?.msg || `Signup failed with status ${response.status}` }
+        return { success: false, error: data?.message || data?.msg || `Signup failed with status ${response.status}` }
       }
     } catch (error) {
       return { success: false, error: "Network error: " + error.message }

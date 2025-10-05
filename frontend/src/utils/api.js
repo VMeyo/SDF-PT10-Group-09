@@ -93,6 +93,24 @@ export const userAPI = {
     apiRequest(`/users/${id}`, {
       method: "DELETE",
     }),
+
+  updateStatus: (id, status) =>
+    apiRequest(`/users/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+
+  getPoints: () => apiRequest("/users/points"),
+
+  redeemReward: (rewardId, points) =>
+    apiRequest("/users/redeem", {
+      method: "POST",
+      body: JSON.stringify({ reward_id: rewardId, points }),
+    }),
+
+  getRedemptions: () => apiRequest("/users/redemptions"),
+
+  getLeaderboard: (top = 10) => apiRequest(`/users/leaderboard?top=${top}`),
 }
 
 export const authAPI = {
@@ -115,6 +133,18 @@ export const authAPI = {
       method: "PUT",
     }),
 
+  forgotPassword: (email) =>
+    apiRequest("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token, newPassword) =>
+    apiRequest(`/auth/reset-password/${token}`, {
+      method: "POST",
+      body: JSON.stringify({ new_password: newPassword }),
+    }),
+
   changePassword: (currentPassword, newPassword, confirmNewPassword) =>
     apiRequest("/auth/change-password", {
       method: "PUT",
@@ -125,14 +155,6 @@ export const authAPI = {
       }),
     }),
 
-  updateSecurityQuestion: (question, answer) =>
-    apiRequest("/auth/security-question", {
-      method: "PUT",
-      body: JSON.stringify({
-        security_question: question,
-        security_answer: answer,
-      }),
-    }),
 }
 
 export const mediaAPI = {

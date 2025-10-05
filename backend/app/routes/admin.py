@@ -82,6 +82,33 @@ def update_incident_status(id):
     return jsonify({"msg": f"Incident status updated to {new_status}"})
 
 # ---------------------
+# Admin: Edit any incident
+# PUT /api/v1/admin/incidents/<id>
+# ---------------------
+@admin_bp.route("/incidents/<int:id>", methods=["PUT"], strict_slashes=False)
+@admin_required
+def edit_incident(id):
+    incident = Incident.query.get_or_404(id)
+    data = request.get_json()
+    
+    if "title" in data:
+        incident.title = data["title"]
+    if "description" in data:
+        incident.description = data["description"]
+    if "status" in data:
+        if data["status"] not in ["pending", "investigating", "resolved", "rejected"]:
+            return jsonify({"msg": "Invalid status"}), 400
+        incident.status = data["status"]
+    if "latitude" in data:
+        incident.latitude = data["latitude"]
+    if "longitude" in data:
+        incident.longitude = data["longitude"]
+    
+    db.session.commit()
+    return jsonify({"msg": "Incident updated successfully"}), 200
+
+
+# ---------------------
 # Admin: Delete any user's incident
 # DELETE /api/v1/admin/incidents/<id>
 # ---------------------
@@ -92,11 +119,6 @@ def delete_user_incident(id):
     db.session.delete(incident)
     db.session.commit()
     return jsonify({"msg": "Incident deleted by admin"}), 200
-
-
-
-# # app/routes/admin.py
-# from flask import Blueprint, request, jsonify
 # from flask_jwt_extended import jwt_required, get_jwt_identity
 # from app.extensions import db, mail
 # from app.models import Incident, User
