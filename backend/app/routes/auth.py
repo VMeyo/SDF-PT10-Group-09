@@ -194,30 +194,37 @@ def reset_password(token):
 @auth_bp.route("/change-password", methods=["PUT"])
 @jwt_required()
 def change_password():
-    user_id = int(get_jwt_identity())
-    user = User.query.get_or_404(user_id)
+    try:
+        user_id = int(get_jwt_identity())
+        user = User.query.get_or_404(user_id)
 
-    data = request.get_json()
-    current_password = data.get("current_password")
-    new_password = data.get("new_password")
-    confirm_new_password = data.get("confirm_new_password")
+        data = request.get_json()
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        confirm_new_password = data.get("confirm_new_password")
 
-    if not all([current_password, new_password, confirm_new_password]):
-        return jsonify({"message": "All password fields are required"}), 400
+        if not all([current_password, new_password, confirm_new_password]):
+            return jsonify({"message": "All password fields are required"}), 400
 
-    if new_password != confirm_new_password:
-        return jsonify({"message": "New password and confirmation do not match"}), 400
+        if new_password != confirm_new_password:
+            return jsonify({"message": "New password and confirmation do not match"}), 400
 
-    if len(new_password) < 6:
-        return jsonify({"message": "Password must be at least 6 characters long"}), 400
+        if len(new_password) < 6:
+            return jsonify({"message": "Password must be at least 6 characters long"}), 400
 
-    if not user.check_password(current_password):
-        return jsonify({"message": "Incorrect current password"}), 401
+        if not user.check_password(current_password):
+            return jsonify({"message": "Incorrect current password"}), 401
 
-    user.password = new_password
-    db.session.commit()
+        user.password = new_password
+        db.session.commit()
 
-    return jsonify({"message": "Password changed successfully"}), 200
+        return jsonify({"message": "Password changed successfully"}), 200
+    
+    except Exception as e:
+        print(f"[ERROR] Change password failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "Internal server error"}), 500
 
 
 # ---------------------

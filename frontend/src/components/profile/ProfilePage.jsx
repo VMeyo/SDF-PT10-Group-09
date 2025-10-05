@@ -118,11 +118,19 @@ export const ProfilePage = ({ onBack }) => {
     setUpdating(true)
 
     try {
+      console.log("[DEBUG] Sending password change request with data:", {
+        current_password: passwordData.currentPassword ? "***" : "empty",
+        new_password: passwordData.newPassword ? "***" : "empty", 
+        confirm_new_password: passwordData.newPassword ? "***" : "empty"
+      })
+
       const response = await authAPI.changePassword(
         passwordData.currentPassword,
         passwordData.newPassword,
         passwordData.newPassword,
       )
+
+      console.log("[DEBUG] Password change response status:", response.status)
 
       if (response.ok) {
         setMessage("Password updated successfully")
@@ -133,9 +141,11 @@ export const ProfilePage = ({ onBack }) => {
         })
       } else {
         const errorData = await response.json()
+        console.log("[DEBUG] Password change error response:", errorData)
         setError(errorData.msg || errorData.message || "Failed to update password")
       }
     } catch (error) {
+      console.error("[DEBUG] Password change exception:", error)
       setError("Error updating password")
     } finally {
       setUpdating(false)
