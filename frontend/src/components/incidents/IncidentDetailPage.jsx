@@ -212,7 +212,7 @@ const IncidentMap = ({ incident }) => {
 }
 
 export const IncidentDetailPage = ({ incidentId, onBack }) => {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [incident, setIncident] = useState(null)
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -563,13 +563,16 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
                   <span className="mr-2">📋</span>
                   Report Update
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full bg-white border-red-300 text-red-700 hover:bg-red-50 rounded-xl py-3"
-                >
-                  <span className="mr-2">✓</span>
-                  Verify Report
-                </Button>
+                {/* Verify Report - Only visible to admins */}
+                {isAdmin && (
+                  <Button
+                    variant="outline"
+                    className="w-full bg-white border-red-300 text-red-700 hover:bg-red-50 rounded-xl py-3"
+                  >
+                    <span className="mr-2">✓</span>
+                    Verify Report
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -679,50 +682,53 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm border-gray-200 rounded-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Admin Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Change Status</label>
-                  <select
-                    value={incident.status}
-                    onChange={(e) => updateReportStatus(e.target.value)}
-                    disabled={updating}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="investigating">Investigating</option>
-                    <option value="approved">Approved</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </div>
-
-                {updating && (
-                  <div className="text-sm text-blue-600 flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    Updating status...
+            {/* Admin Actions - Only visible to admins */}
+            {isAdmin && (
+              <Card className="shadow-sm border-gray-200 rounded-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Admin Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Change Status</label>
+                    <select
+                      value={incident.status}
+                      onChange={(e) => updateReportStatus(e.target.value)}
+                      disabled={updating}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="investigating">Investigating</option>
+                      <option value="approved">Approved</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
                   </div>
-                )}
 
-                <div className="pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold text-red-900 mb-2">Danger Zone</h4>
-                  <p className="text-sm text-red-700 mb-3">
-                    Permanently delete this report. This action cannot be undone.
-                  </p>
-                  <Button
-                    onClick={deleteReport}
-                    variant="outline"
-                    className="w-full text-red-600 border-red-300 hover:bg-red-100 bg-transparent"
-                    size="sm"
-                  >
-                    Delete Report
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  {updating && (
+                    <div className="text-sm text-blue-600 flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Updating status...
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <h4 className="font-semibold text-red-900 mb-2">Danger Zone</h4>
+                    <p className="text-sm text-red-700 mb-3">
+                      Permanently delete this report. This action cannot be undone.
+                    </p>
+                    <Button
+                      onClick={deleteReport}
+                      variant="outline"
+                      className="w-full text-red-600 border-red-300 hover:bg-red-100 bg-transparent"
+                      size="sm"
+                    >
+                      Delete Report
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

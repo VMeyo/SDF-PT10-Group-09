@@ -18,13 +18,48 @@ export const EmergencyDashboard = () => {
   const [typeFilter, setTypeFilter] = useState("All Types")
   const [severityFilter, setSeverityFilter] = useState("All Levels")
   const [selectedIncident, setSelectedIncident] = useState(null)
+  const [reportersData, setReportersData] = useState({})
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL
   const token = localStorage.getItem("token")
 
+  const fetchUserName = async (userId) => {
+    if (!userId || reportersData[userId]) return reportersData[userId] || null
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        const userName = userData.name || userData.username || userData.email
+        setReportersData((prev) => ({ ...prev, [userId]: userName }))
+        return userName
+      }
+    } catch (error) {
+      console.error(`[v0] Error fetching user ${userId}:`, error)
+    }
+
+    return null
+  }
+
   useEffect(() => {
     fetchEmergencyData()
   }, [])
+
+  useEffect(() => {
+    // Fetch reporter names for all reports
+    recentReports.forEach((report) => {
+      const userId = report.created_by || report.user_id
+      if (userId && !reportersData[userId]) {
+        fetchUserName(userId)
+      }
+    })
+  }, [recentReports])
 
   const fetchEmergencyData = async () => {
     try {
@@ -296,7 +331,7 @@ export const EmergencyDashboard = () => {
           {filteredReports.length > 0 ? (
             filteredReports.map((report) => {
               const reporterId = report.created_by || report.user_id
-              const reporterName = report.reporter_name || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
+              const reporterName = report.reporter_name || reportersData[reporterId] || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
 
               const mediaArray = report.media || []
               const firstImage = mediaArray.find(

@@ -133,8 +133,12 @@ def refresh():
 # Forgot password (send reset email)
 # POST /api/v1/auth/forgot-password
 # ---------------------
-@auth_bp.route("/forgot-password", methods=["POST"])
+@auth_bp.route("/forgot-password", methods=["POST", "OPTIONS"])
 def forgot_password():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     data = request.get_json()
     email = data.get("email")
     
@@ -145,26 +149,40 @@ def forgot_password():
     if not user:
         return jsonify({"message": "Email not registered"}), 404
     
-    token = generate_token(email)
-    reset_url = url_for("auth_bp.reset_password", token=token, _external=True)
+    try:
+        # Generate reset token
+        token = generate_token(user.email)
+        reset_url = f"https://sdf-pt-10-group-09.vercel.app/reset-password?token={token}"
+        
+        # Send email
+        msg = Message(
+            "Password Reset Request",
+            recipients=[user.email],
+            html=f"""
+            <h2>Password Reset Request</h2>
+            <p>You have requested to reset your password. Click the link below to reset it:</p>
+            <p><a href="{reset_url}">Reset Password</a></p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you did not request this, please ignore this email.</p>
+            """
+        )
+        mail.send(msg)
+        
+        return jsonify({"message": "Password reset email sent"}), 200
     
-    msg = Message(
-        subject="Password Reset Request",
-        recipients=[email],
-        body=f"Hi {user.name},\n\nClick the link to reset your password: {reset_url}\n\nOr use this token: {token}\n\nIf you did not request this, ignore this email.",
-        sender=current_app.config.get("MAIL_DEFAULT_SENDER", "noreply@ajali.com")
-    )
-    mail.send(msg)
-    
-    return jsonify({"message": "Password reset email sent"}), 200
+    except Exception as e:
+        print(f"[ERROR] Failed to send password reset email: {str(e)}")
+        # Still return success to prevent email enumeration attacks
+        return jsonify({"message": "Password reset email sent"}), 200
 
 
 # ---------------------
-# Reset password with token
-# POST /api/v1/auth/reset-password/<token>
-# ---------------------
-@auth_bp.route("/reset-password/<token>", methods=["POST"])
+@auth_bp.route("/reset-password/<token>", methods=["POST", "OPTIONS"])
 def reset_password(token):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     email = verify_token(token)
     if not email:
         return jsonify({"message": "Invalid or expired token"}), 400
