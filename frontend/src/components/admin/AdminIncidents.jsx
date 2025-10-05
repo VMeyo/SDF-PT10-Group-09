@@ -16,6 +16,7 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const [updating, setUpdating] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingIncident, setEditingIncident] = useState(null)
+  const [reportersData, setReportersData] = useState({})
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -29,9 +30,43 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api/v1"
   const token = localStorage.getItem("token")
 
+  const fetchUserName = async (userId) => {
+    if (!userId || reportersData[userId]) return reportersData[userId] || null
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        const userName = userData.name || userData.username || userData.email
+        setReportersData((prev) => ({ ...prev, [userId]: userName }))
+        return userName
+      }
+    } catch (error) {
+      console.error(`[v0] Error fetching user ${userId}:`, error)
+    }
+
+    return null
+  }
+
   useEffect(() => {
     fetchIncidents()
   }, [])
+
+  useEffect(() => {
+    // Fetch reporter names for all incidents
+    incidents.forEach((incident) => {
+      const userId = incident.created_by || incident.user_id
+      if (userId && !reportersData[userId]) {
+        fetchUserName(userId)
+      }
+    })
+  }, [incidents])
 
   useEffect(() => {
     applyFilters()
@@ -234,7 +269,7 @@ export const AdminIncidents = ({ onStatsUpdate }) => {
       <div className="space-y-4">
         {filteredIncidents.map((incident) => {
           const reporterId = incident.created_by || incident.user_id
-          const reporterName = incident.reporter_name || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
+          const reporterName = incident.reporter_name || reportersData[reporterId] || (reporterId ? `User #${reporterId}` : "Anonymous Reporter")
 
           const mediaArray = incident.media || []
           const firstImage = mediaArray.find(
