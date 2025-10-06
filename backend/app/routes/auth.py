@@ -209,11 +209,19 @@ def reset_password(token):
 # ---------------------
 # Change password (Authenticated user)
 # ---------------------
-@auth_bp.route("/change-password", methods=["PUT"])
-@jwt_required()
+@auth_bp.route("/change-password", methods=["PUT", "POST", "OPTIONS"])
+@jwt_required(optional=True)
 def change_password():
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     try:
-        user_id = int(get_jwt_identity())
+        user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({"message": "Authentication required"}), 401
+            
+        user_id = int(user_id)
         user = User.query.get_or_404(user_id)
 
         data = request.get_json()

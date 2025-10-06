@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, make_response, request
 from flask_cors import CORS
 from .config import Config
 from .extensions import db, migrate, jwt, mail
@@ -31,8 +31,9 @@ def create_app(config_class=Config):
                 "https://sdf-pt10-group-09.onrender.com"
             ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "expose_headers": ["Content-Type", "Authorization"]
+            "allow_headers": ["Content-Type", "Authorization", "Accept"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "max_age": 600
         }},
         supports_credentials=True
     )
@@ -67,6 +68,16 @@ def create_app(config_class=Config):
     @app.route("/health")
     def health_check():
         return {"status": "ok"}, 200
+
+    # Global OPTIONS handler for CORS preflight
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = make_response()
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+            response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+            return response
 
     return app
 
