@@ -6,12 +6,12 @@ from app.models import Incident, Media, User
 incidents_bp = Blueprint("incidents_bp", __name__, url_prefix="/api/v1/incidents")
 
 # Allowed status values
-ALLOWED_STATUSES = ["pending", "in_progress", "approved", "rejected"]
+ALLOWED_STATUSES = ["pending", "investigating", "approved", "resolved", "rejected"]
 
 
-# -------------------------------------------------
+# ------------------------------------------------
 # Helper: format media list
-# -------------------------------------------------
+# ------------------------------------------------
 def format_media_list(incident):
     """Return a list of media dicts for the given incident."""
     return [

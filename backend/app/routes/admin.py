@@ -15,9 +15,16 @@ admin_bp = Blueprint("admin_bp", __name__, url_prefix="/api/v1/admin")
 # ---------------------
 def admin_required(fn):
     @wraps(fn)
-    @jwt_required()
+    @jwt_required(optional=True)
     def wrapper(*args, **kwargs):
+        # Handle preflight OPTIONS request
+        if request.method == 'OPTIONS':
+            return jsonify({"message": "OK"}), 200
+        
         user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({"message": "Authentication required"}), 401
+            
         user = User.query.get(user_id)
         if not user or user.role != "admin":
             return jsonify({"msg": "Admin access required"}), 403
@@ -54,13 +61,13 @@ def list_all_incidents():
 # Update incident status
 # PATCH /api/v1/admin/incidents/<id>/status
 # ---------------------
-@admin_bp.route("/incidents/<int:id>/status", methods=["PATCH"], strict_slashes=False)
+@admin_bp.route("/incidents/<int:id>/status", methods=["PATCH", "OPTIONS"], strict_slashes=False)
 @admin_required
 def update_incident_status(id):
     incident = Incident.query.get_or_404(id)
     data = request.get_json()
     new_status = data.get("status")
-    if new_status not in ["investigating", "resolved", "rejected"]:
+    if new_status not in ["pending", "investigating", "approved", "resolved", "rejected"]:
         return jsonify({"msg": "Invalid status"}), 400
 
     incident.status = new_status
@@ -85,7 +92,7 @@ def update_incident_status(id):
 # Admin: Edit any incident
 # PUT /api/v1/admin/incidents/<id>
 # ---------------------
-@admin_bp.route("/incidents/<int:id>", methods=["PUT"], strict_slashes=False)
+@admin_bp.route("/incidents/<int:id>", methods=["PUT", "OPTIONS"], strict_slashes=False)
 @admin_required
 def edit_incident(id):
     incident = Incident.query.get_or_404(id)
@@ -96,7 +103,7 @@ def edit_incident(id):
     if "description" in data:
         incident.description = data["description"]
     if "status" in data:
-        if data["status"] not in ["pending", "investigating", "resolved", "rejected"]:
+        if data["status"] not in ["pending", "investigating", "approved", "resolved", "rejected"]:
             return jsonify({"msg": "Invalid status"}), 400
         incident.status = data["status"]
     if "latitude" in data:
@@ -112,7 +119,7 @@ def edit_incident(id):
 # Admin: Delete any user's incident
 # DELETE /api/v1/admin/incidents/<id>
 # ---------------------
-@admin_bp.route("/incidents/<int:id>", methods=["DELETE"], strict_slashes=False)
+@admin_bp.route("/incidents/<int:id>", methods=["DELETE", "OPTIONS"], strict_slashes=False)
 @admin_required
 def delete_user_incident(id):
     incident = Incident.query.get_or_404(id)
