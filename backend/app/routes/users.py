@@ -122,13 +122,57 @@ def list_users():
 
 
 # ---------------------
+# Get individual user details
+# GET /api/v1/users/<user_id>
+# ---------------------
+@users_bp.route("/<int:user_id>", methods=["GET", "OPTIONS"])
+@jwt_required(optional=True)
+def get_user(user_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
+    current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
+    current_user = User.query.get(current_user_id)
+
+    # Allow users to view their own profile, or admins to view any profile
+    if int(current_user_id) != user_id and current_user.role != "admin":
+        return jsonify({"message": "Access denied"}), 403
+
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "phone": user.phone,
+        "role": user.role,
+        "points": user.points,
+        "status": getattr(user, 'status', 'active'),
+        "location": getattr(user, 'location', None),
+        "latitude": getattr(user, 'latitude', None),
+        "longitude": getattr(user, 'longitude', None),
+        "created_at": user.created_at.isoformat() if user.created_at else None
+    })
+
+
+# ---------------------
 # Admin: Edit a user
 # PUT /api/v1/users/<user_id>
 # ---------------------
-@users_bp.route("/<int:user_id>", methods=["PUT"])
-@jwt_required()
+@users_bp.route("/<int:user_id>", methods=["PUT", "OPTIONS"])
+@jwt_required(optional=True)
 def edit_user(user_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
     current_user = User.query.get(current_user_id)
 
     if current_user.role != "admin":
@@ -175,10 +219,17 @@ def edit_user(user_id):
 # Admin: Delete a user
 # DELETE /api/v1/users/<user_id>
 # ---------------------
-@users_bp.route("/<int:user_id>", methods=["DELETE"])
-@jwt_required()
+@users_bp.route("/<int:user_id>", methods=["DELETE", "OPTIONS"])
+@jwt_required(optional=True)
 def delete_user(user_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
     current_user = User.query.get(current_user_id)
 
     if current_user.role != "admin":
@@ -199,10 +250,17 @@ def delete_user(user_id):
 # Admin: Update user status
 # PATCH /api/v1/users/<user_id>/status
 # ---------------------
-@users_bp.route("/<int:user_id>/status", methods=["PATCH"])
-@jwt_required()
+@users_bp.route("/<int:user_id>/status", methods=["PATCH", "OPTIONS"])
+@jwt_required(optional=True)
 def update_user_status(user_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
     current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
     current_user = User.query.get(current_user_id)
 
     if current_user.role != "admin":
