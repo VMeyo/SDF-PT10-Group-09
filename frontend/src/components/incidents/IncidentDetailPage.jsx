@@ -254,9 +254,24 @@ export const IncidentDetailPage = ({ incidentId, onBack }) => {
         console.log("[v0] Incident data received:", incidentData)
         setIncident(incidentData)
 
-        if (user) {
-          setReporterData(user)
-          console.log("[v0] Using current user data:", user)
+        // Fetch reporter data based on who created the incident
+        if (incidentData.created_by) {
+          try {
+            const reporterRes = await fetch(`${API_BASE}/users/${incidentData.created_by}/name`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            })
+            
+            if (reporterRes.ok) {
+              const reporterInfo = await reporterRes.json()
+              setReporterData(reporterInfo)
+              console.log("[v0] Reporter data fetched:", reporterInfo)
+            }
+          } catch (error) {
+            console.error("[v0] Error fetching reporter data:", error)
+          }
         }
       } else {
         setError(`Failed to load incident (Status: ${incidentRes.status})`)

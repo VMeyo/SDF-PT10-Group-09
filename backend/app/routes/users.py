@@ -99,6 +99,9 @@ def leaderboard():
 def list_users():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
+    
+    if not current_user:
+        return jsonify({"msg": "User not found"}), 404
 
     if current_user.role != "admin":
         return jsonify({"msg": "Admins only"}), 403
@@ -122,7 +125,31 @@ def list_users():
 
 
 # ---------------------
-# Get individual user details
+# Get basic user info (name only) - for reporter names in reports
+# GET /api/v1/users/<user_id>/name
+# ---------------------
+@users_bp.route("/<int:user_id>/name", methods=["GET", "OPTIONS"])
+@jwt_required(optional=True)
+def get_user_name(user_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
+    current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"message": "Authentication required"}), 401
+
+    user = User.query.get_or_404(user_id)
+    return jsonify({
+        "id": user.id,
+        "name": user.name,
+        "username": user.name,  # For compatibility
+        "email": user.email  # Fallback for name display
+    })
+
+
+# ---------------------
+# Get individual user details (full profile)
 # GET /api/v1/users/<user_id>
 # ---------------------
 @users_bp.route("/<int:user_id>", methods=["GET", "OPTIONS"])
@@ -137,6 +164,8 @@ def get_user(user_id):
         return jsonify({"message": "Authentication required"}), 401
         
     current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
 
     # Allow users to view their own profile, or admins to view any profile
     if int(current_user_id) != user_id and current_user.role != "admin":
@@ -174,6 +203,8 @@ def edit_user(user_id):
         return jsonify({"message": "Authentication required"}), 401
         
     current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
 
     if current_user.role != "admin":
         return jsonify({"msg": "Admins only"}), 403
@@ -231,6 +262,8 @@ def delete_user(user_id):
         return jsonify({"message": "Authentication required"}), 401
         
     current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
 
     if current_user.role != "admin":
         return jsonify({"msg": "Admins only"}), 403
@@ -262,6 +295,8 @@ def update_user_status(user_id):
         return jsonify({"message": "Authentication required"}), 401
         
     current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
 
     if current_user.role != "admin":
         return jsonify({"msg": "Admins only"}), 403

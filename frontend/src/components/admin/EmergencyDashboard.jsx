@@ -27,7 +27,7 @@ export const EmergencyDashboard = () => {
     if (!userId || reportersData[userId]) return reportersData[userId] || null
 
     try {
-      const response = await fetch(`${API_BASE}/users/${userId}`, {
+      const response = await fetch(`${API_BASE}/users/${userId}/name`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

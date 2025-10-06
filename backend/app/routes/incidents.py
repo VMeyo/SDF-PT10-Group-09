@@ -118,11 +118,19 @@ def create_incident():
 # UPDATE incident
 # PUT /api/v1/incidents/<id>
 # -------------------------------------------------
-@incidents_bp.route("/<int:incident_id>", methods=["PUT"])
-@jwt_required()
+@incidents_bp.route("/<int:incident_id>", methods=["PUT", "OPTIONS"])
+@jwt_required(optional=True)
 def update_incident(incident_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
+    user_id = get_jwt_identity()
+    if not user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
     incident = Incident.query.get_or_404(incident_id)
-    user_id = int(get_jwt_identity())
+    user_id = int(user_id)
 
     # Authorization check: owner or admin
     if incident.created_by != user_id and not is_admin(user_id):
@@ -159,10 +167,18 @@ def update_incident(incident_id):
 # UPDATE incident status (Admin only)
 # PATCH /api/v1/incidents/<id>/status
 # -------------------------------------------------
-@incidents_bp.route("/<int:incident_id>/status", methods=["PATCH"])
-@jwt_required()
+@incidents_bp.route("/<int:incident_id>/status", methods=["PATCH", "OPTIONS"])
+@jwt_required(optional=True)
 def update_incident_status(incident_id):
-    user_id = int(get_jwt_identity())
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
+    user_id = get_jwt_identity()
+    if not user_id:
+        return jsonify({"message": "Authentication required"}), 401
+        
+    user_id = int(user_id)
     
     # Check if user is admin
     if not is_admin(user_id):
@@ -203,21 +219,27 @@ def update_incident_status(incident_id):
         "new_status": new_status
     }), 200
 
-
 # -------------------------------------------------
 # DELETE incident
 # DELETE /api/v1/incidents/<id>
 # -------------------------------------------------
-@incidents_bp.route("/<int:incident_id>", methods=["DELETE"])
-@jwt_required()
+@incidents_bp.route("/<int:incident_id>", methods=["DELETE", "OPTIONS"])
+@jwt_required(optional=True)
 def delete_incident(incident_id):
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+    
+    user_id = get_jwt_identity()
+    if not user_id:
+        return jsonify({"message": "Authentication required"}), 401
+    
     incident = Incident.query.get_or_404(incident_id)
-    user_id = int(get_jwt_identity())
+    user_id = int(user_id)
 
     # Authorization check: owner or admin
     if incident.created_by != user_id and not is_admin(user_id):
         return jsonify({"msg": "Unauthorized"}), 403
-
     db.session.delete(incident)
     db.session.commit()
     return jsonify({"msg": "Incident deleted"}), 200
